@@ -11,10 +11,14 @@ from .const import (
     API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER,
     API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
     API_AUTH_TOKEN_JSON_KEY,
+    API_AUTH_ACCESS_TOKEN_KEY,
+    API_AUTH_API_KEY_HEADER,
+    API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
     API_AUTH_MESSAGE_JSON_KEY,
     API_AUTH_STATUS_JSON_KEY,
     API_CLUB_VISITS_ENDPOINT_FORMATSTRING,
     API_CLUB_VISITS_ENDPOINT_DATE_FORMAT,
+    API_PROFILE_ENDPOINT,
     API_CLUB_VISITS_AUTH_HEADER,
     AuthenticationResults,
     AUTHENTICATION_RESPONSE_MESSAGES,
@@ -29,11 +33,11 @@ def handle_authentication_response_json(response_json: dict):
     message = response_json.get(API_AUTH_MESSAGE_JSON_KEY)
     status = response_json.get(API_AUTH_STATUS_JSON_KEY)
     if message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.SUCCESS]:
-        return response_json[API_AUTH_TOKEN_JSON_KEY]
+        return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
     elif message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED]:
         if API_AUTH_TOKEN_JSON_KEY in response_json:
             _LOGGER.warning("Life Time password needs to be changed, but API can still be used")
-            return response_json[API_AUTH_TOKEN_JSON_KEY]
+            return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
         else:
             raise ApiPasswordNeedsToBeChanged
     elif (
@@ -57,6 +61,8 @@ class Api:
         self._password = password
         self._client_session = client_session
         self._sso_token = None
+        self._access_token = None
+        self._member_id = None
 
         self.update_successful = True
         self.result_json = None
@@ -73,12 +79,31 @@ class Api:
                     API_AUTH_REQUEST_PASSWORD_JSON_KEY: self._password,
                 },
                 headers={
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE
+                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                    'Accept': '*/*',
                 },
             ) as response:
-                _LOGGER.warn("LIFETIME RESPONES STATUS %d", response.status)
                 response_json = await response.json()
-                self._sso_token = handle_authentication_response_json(response_json)
+                auth_data = handle_authentication_response_json(response_json)
+                self._sso_token = auth_data[0]
+                self._access_token = auth_data[1]
+                
+                # Get member ID... todo move to separate func
+                async with self._client_session.get(
+                    API_PROFILE_ENDPOINT,
+                    headers={
+                        API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                        'Authorization': self._access_token,
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                        'Accept': '*/*',
+                    },
+                ) as profile_response:
+                    profile_response_json = await profile_response.json()
+                    self._member_id = profile_response_json['memberDetails']['memberId']
+                    
         except ClientResponseError as err:
             if err.status == HTTPStatus.UNAUTHORIZED:
                 raise ApiInvalidAuth
@@ -95,12 +120,17 @@ class Api:
         try:
             async with self._client_session.get(
                 API_CLUB_VISITS_ENDPOINT_FORMATSTRING.format(
+                    member_id=self._member_id,
                     start_date=start_date.strftime(API_CLUB_VISITS_ENDPOINT_DATE_FORMAT),
                     end_date=end_date.strftime(API_CLUB_VISITS_ENDPOINT_DATE_FORMAT),
                 ),
                 headers={
                     API_CLUB_VISITS_AUTH_HEADER: self._sso_token,
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE
+                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_API_KEY_HEADER: API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                    'Accept': '*/*',
                 },
             ) as response:
                 response_json = await response.json()
@@ -172,7 +202,6 @@ async def main():
         api = Api(client_session, username, password)
         await api.authenticate()
         await api.update()
-        print(api.result_json)
 
 if __name__ == "__main__":
     import asyncio

@@ -67,7 +67,8 @@ class VisitsSensor(Entity):
         visits_this_year = 0
         visits_this_month = 0
         visits_this_week = 0
-        for visit in self._api_client.result_json:
+        # TODO: Handle empty result more gracefully
+        for visit in self._api_client.result_json['data']:
             # Convert milliseconds to seconds timestamp
             visit_timestamp = visit[API_CLUB_VISITS_TIMESTAMP_JSON_KEY] / 1000
             visit_date = date.fromtimestamp(visit_timestamp)
@@ -88,6 +89,6 @@ class VisitsSensor(Entity):
 
     @property
     def state(self):
-        if self._api_client.result_json is None:
+        if self._api_client.result_json is None or self._api_client.result_json['data'] is None:
             return -1
-        return len(self._api_client.result_json)
+        return len(self._api_client.result_json['data'])
