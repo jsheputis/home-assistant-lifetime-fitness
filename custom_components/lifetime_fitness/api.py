@@ -76,6 +76,7 @@ class Api:
                     API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE
                 },
             ) as response:
+                _LOGGER.warn("LIFETIME RESPONES STATUS %d", response.status)
                 response_json = await response.json()
                 self._sso_token = handle_authentication_response_json(response_json)
         except ClientResponseError as err:
