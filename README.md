@@ -9,7 +9,13 @@ This integration uses [Life Time Fitness](https://www.lifetime.life)'s API in or
 
 ## 1. Easy Mode
 
-Install via HACS.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+
+1. Open HACS Settings and add this repository (https://github.com/jsheputis/home-assistant-lifetime-fitness/)
+   as a Custom Repository (use **Integration** as the category).
+2. The `Life Time Fitness` page should automatically load (or find it in the HACS Store)
+3. Click `Download`
+4. Continue to [Setup](README.md#Setup)
 
 ## 2. Manual
 
@@ -39,6 +45,7 @@ Once the component has been installed, you need to configure it by authenticatin
 1. From the HomeAssistant web panel, navigate to 'Configuration' (on the sidebar) then 'Integrations'. Click `+` button in bottom right corner,
 search '**Life Time Fitness**' and click 'Configure'.
 1. Input your Life Time account username and password. Hit submit when selected.
+1. *Optional*: After configuration is added. You can update the starting Day of Week by going to the integration, clicking `Configure` on the desired account, and updating the start day of week.
 1. You're done!
 
 If you want to follow more than 1 account, just follow the same steps to add additional accounts.

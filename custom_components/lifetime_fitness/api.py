@@ -144,6 +144,9 @@ class Api:
             raise ApiCannotConnect
 
     async def update(self):
+        await self.update_visits()
+            
+    async def update_visits(self):
         today = date.today()
         first_day_of_the_year = date(today.year, 1, 1)
         try:

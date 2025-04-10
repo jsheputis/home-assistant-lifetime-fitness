@@ -1,8 +1,8 @@
 {
     "name": "Life Time Fitness",
-    "domains": ["sensor"],
-    "iot_class": "Cloud Polling",
     "render_readme": true,
-    "zip_release": true,
-    "filename": "lifetime_fitness.zip"
+    "country": ["US", "CA"],
+    "homeassistant": "2024.11.0",
+    "filename": "lifetime_fitness.zip",
+    "zip_release": true
 }
