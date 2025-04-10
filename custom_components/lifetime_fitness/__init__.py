@@ -1,15 +1,20 @@
 """Life Time Fitness integration."""
+
 from __future__ import annotations
 import logging
 
+
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import Api
-from .const import DOMAIN, VERSION, ISSUE_URL, PLATFORM, CONF_USERNAME, CONF_PASSWORD
+from .const import DOMAIN, VERSION, ISSUE_URL, CONF_USERNAME, CONF_PASSWORD
 
-PLATFORMS: list[str] = [PLATFORM]
+PLATFORMS: list[str] = [
+    Platform.SENSOR,
+]
 _LOGGER = logging.getLogger(__name__)
 
 

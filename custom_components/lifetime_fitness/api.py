@@ -8,14 +8,14 @@ from .const import (
     API_AUTH_ENDPOINT,
     API_AUTH_REQUEST_USERNAME_JSON_KEY,
     API_AUTH_REQUEST_PASSWORD_JSON_KEY,
-    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER,
-    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
-    API_AUTH_TOKEN_JSON_KEY,
-    API_AUTH_ACCESS_TOKEN_KEY,
+    API_AUTH_SUBSCRIPTION_KEY_HEADER,
+    API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+    API_AUTH_RESPONSE_TOKEN_JSON_KEY,
+    API_AUTH_RESPONSE_ACCESS_TOKEN_KEY,
+    API_AUTH_RESPONSE_MESSAGE_JSON_KEY,
+    API_AUTH_RESPONSE_STATUS_JSON_KEY,
     API_AUTH_API_KEY_HEADER,
-    API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
-    API_AUTH_MESSAGE_JSON_KEY,
-    API_AUTH_STATUS_JSON_KEY,
+    API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
     API_CLUB_VISITS_ENDPOINT_FORMATSTRING,
     API_CLUB_VISITS_ENDPOINT_DATE_FORMAT,
     API_PROFILE_ENDPOINT,
@@ -30,14 +30,14 @@ _LOGGER = logging.getLogger(__name__)
 
 def handle_authentication_response_json(response_json: dict):
     # Based on https://my.lifetime.life/components/login/index.js
-    message = response_json.get(API_AUTH_MESSAGE_JSON_KEY)
-    status = response_json.get(API_AUTH_STATUS_JSON_KEY)
+    message = response_json.get(API_AUTH_RESPONSE_MESSAGE_JSON_KEY)
+    status = response_json.get(API_AUTH_RESPONSE_STATUS_JSON_KEY)
     if message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.SUCCESS]:
-        return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
+        return (response_json[API_AUTH_RESPONSE_TOKEN_JSON_KEY], response_json[API_AUTH_RESPONSE_ACCESS_TOKEN_KEY])
     elif message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED]:
-        if API_AUTH_TOKEN_JSON_KEY in response_json:
+        if API_AUTH_RESPONSE_TOKEN_JSON_KEY in response_json:
             _LOGGER.warning("Life Time password needs to be changed, but API can still be used")
-            return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
+            return (response_json[API_AUTH_RESPONSE_TOKEN_JSON_KEY], response_json[API_AUTH_RESPONSE_ACCESS_TOKEN_KEY])
         else:
             raise ApiPasswordNeedsToBeChanged
     elif (
@@ -79,7 +79,7 @@ class Api:
                     API_AUTH_REQUEST_PASSWORD_JSON_KEY: self._password,
                 },
                 headers={
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
                     'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
                     'Accept': '*/*',
@@ -94,7 +94,7 @@ class Api:
                 async with self._client_session.get(
                     API_PROFILE_ENDPOINT,
                     headers={
-                        API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                        API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                         'Authorization': self._access_token,
                         'Content-Type': 'application/json',
                         'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
@@ -126,8 +126,8 @@ class Api:
                 ),
                 headers={
                     API_CLUB_VISITS_AUTH_HEADER: self._sso_token,
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
-                    API_AUTH_API_KEY_HEADER: API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_API_KEY_HEADER: API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
                     'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
                     'Accept': '*/*',

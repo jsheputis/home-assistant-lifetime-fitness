@@ -18,7 +18,7 @@ from .const import (
     CONF_PASSWORD,
     CONF_START_OF_WEEK_DAY,
     CONF_START_OF_WEEK_DAY_VALUES,
-    DEFAULT_START_OF_WEEK_DAY,
+    CONF_DEFAULT_START_OF_WEEK_DAY,
 )
 from .api import Api, ApiCannotConnect, ApiInvalidAuth
 
@@ -67,7 +67,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_START_OF_WEEK_DAY,
                         default=self.config_entry.options.get(
-                            CONF_START_OF_WEEK_DAY, DEFAULT_START_OF_WEEK_DAY
+                            CONF_START_OF_WEEK_DAY, CONF_DEFAULT_START_OF_WEEK_DAY
                         ),
                     ): vol.In(CONF_START_OF_WEEK_DAY_VALUES),
                 }
