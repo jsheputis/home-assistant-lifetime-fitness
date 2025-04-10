@@ -1,8 +1,8 @@
 {
-    "name": "Life Time Fitness",
     "domains": ["sensor"],
+    "name": "Life Time Fitness",
+    "filename": "lifetime_fitness.zip",
     "iot_class": "Cloud Polling",
     "render_readme": true,
-    "zip_release": true,
-    "filename": "lifetime_fitness.zip"
+    "zip_release": true
 }
