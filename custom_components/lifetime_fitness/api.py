@@ -2,6 +2,7 @@
 from aiohttp import ClientSession, ClientError, ClientResponseError, ClientConnectionError
 from datetime import date
 from http import HTTPStatus
+from fake_useragent import UserAgent
 import logging
 
 from .const import (
@@ -27,6 +28,7 @@ from .model import (
 
 _LOGGER = logging.getLogger(__name__)
 
+USER_AGENT = UserAgent().chrome
 
 def handle_authentication_response_json(response_json: dict) -> LifetimeAuthentication:
     """Handle authentication response JSON"""
@@ -86,7 +88,7 @@ class Api:
                 headers={
                     API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
-                    'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                    'User-Agent': USER_AGENT,
                     'Accept': '*/*',
                 },
             ) as response:
@@ -100,7 +102,7 @@ class Api:
                         API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                         'Authorization': self._lifetime_authentication.access_token,
                         'Content-Type': 'application/json',
-                        'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                        'User-Agent': USER_AGENT,
                         'Accept': '*/*',
                     },
                 ) as profile_response:
@@ -132,7 +134,7 @@ class Api:
                     API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                     API_AUTH_API_KEY_HEADER: API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
-                    'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
+                    'User-Agent': USER_AGENT,
                     'Accept': '*/*',
                 },
             ) as response:
