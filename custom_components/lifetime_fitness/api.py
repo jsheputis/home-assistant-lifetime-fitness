@@ -8,14 +8,10 @@ from .const import (
     API_AUTH_ENDPOINT,
     API_AUTH_REQUEST_USERNAME_JSON_KEY,
     API_AUTH_REQUEST_PASSWORD_JSON_KEY,
-    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER,
-    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
-    API_AUTH_TOKEN_JSON_KEY,
-    API_AUTH_ACCESS_TOKEN_KEY,
+    API_AUTH_SUBSCRIPTION_KEY_HEADER,
+    API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
     API_AUTH_API_KEY_HEADER,
-    API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
-    API_AUTH_MESSAGE_JSON_KEY,
-    API_AUTH_STATUS_JSON_KEY,
+    API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
     API_CLUB_VISITS_ENDPOINT_FORMATSTRING,
     API_CLUB_VISITS_ENDPOINT_DATE_FORMAT,
     API_PROFILE_ENDPOINT,
@@ -25,19 +21,28 @@ from .const import (
     AUTHENTICATION_RESPONSE_STATUSES
 )
 
+from .model import (
+    LifetimeAuthentication
+)
+
 _LOGGER = logging.getLogger(__name__)
 
 
-def handle_authentication_response_json(response_json: dict):
+def handle_authentication_response_json(response_json: dict) -> LifetimeAuthentication:
+    """Handle authentication response JSON"""
+    lifetime_authentication = LifetimeAuthentication()
+    lifetime_authentication.update_non_empty(response_json)
+    
     # Based on https://my.lifetime.life/components/login/index.js
-    message = response_json.get(API_AUTH_MESSAGE_JSON_KEY)
-    status = response_json.get(API_AUTH_STATUS_JSON_KEY)
+    message = lifetime_authentication.message
+    status = lifetime_authentication.status
+    
     if message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.SUCCESS]:
-        return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
+        return lifetime_authentication
     elif message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED]:
-        if API_AUTH_TOKEN_JSON_KEY in response_json:
+        if None is not lifetime_authentication.sso_id:
             _LOGGER.warning("Life Time password needs to be changed, but API can still be used")
-            return (response_json[API_AUTH_TOKEN_JSON_KEY], response_json[API_AUTH_ACCESS_TOKEN_KEY])
+            return lifetime_authentication
         else:
             raise ApiPasswordNeedsToBeChanged
     elif (
@@ -60,8 +65,8 @@ class Api:
         self._username = username
         self._password = password
         self._client_session = client_session
-        self._sso_token = None
-        self._access_token = None
+        
+        self._lifetime_authentication = None
         self._member_id = None
 
         self.update_successful = True
@@ -79,23 +84,21 @@ class Api:
                     API_AUTH_REQUEST_PASSWORD_JSON_KEY: self._password,
                 },
                 headers={
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
                     'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
                     'Accept': '*/*',
                 },
             ) as response:
                 response_json = await response.json()
-                auth_data = handle_authentication_response_json(response_json)
-                self._sso_token = auth_data[0]
-                self._access_token = auth_data[1]
+                self._lifetime_authentication = handle_authentication_response_json(response_json)
                 
                 # Get member ID... todo move to separate func
                 async with self._client_session.get(
                     API_PROFILE_ENDPOINT,
                     headers={
-                        API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
-                        'Authorization': self._access_token,
+                        API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                        'Authorization': self._lifetime_authentication.access_token,
                         'Content-Type': 'application/json',
                         'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
                         'Accept': '*/*',
@@ -114,7 +117,7 @@ class Api:
             raise ApiCannotConnect
 
     async def _get_visits_between_dates(self, start_date: date, end_date: date):
-        if self._sso_token is None:
+        if self._lifetime_authentication.sso_id is None:
             raise ApiAuthRequired
 
         try:
@@ -125,9 +128,9 @@ class Api:
                     end_date=end_date.strftime(API_CLUB_VISITS_ENDPOINT_DATE_FORMAT),
                 ),
                 headers={
-                    API_CLUB_VISITS_AUTH_HEADER: self._sso_token,
-                    API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER: API_AUTH_REQUEST_SUBSCRIPTION_KEY_HEADER_VALUE,
-                    API_AUTH_API_KEY_HEADER: API_AUTH_REQUEST_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
+                    API_CLUB_VISITS_AUTH_HEADER: self._lifetime_authentication.sso_id,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_API_KEY_HEADER: API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
                     'Content-Type': 'application/json',
                     'User-Agent': 'PostmanRuntime/7.43.3', # Temp fix 
                     'Accept': '*/*',

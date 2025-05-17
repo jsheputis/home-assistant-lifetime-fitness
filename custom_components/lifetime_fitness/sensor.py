@@ -5,16 +5,16 @@ from homeassistant.helpers.entity import Entity
 from .api import Api
 from .const import (
     DOMAIN,
-    UNIT_OF_MEASUREMENT,
+    VISITS_SENSOR_UNIT_OF_MEASUREMENT,
     VISITS_SENSOR_ID_SUFFIX,
     VISITS_SENSOR_NAME_SUFFIX,
     CONF_START_OF_WEEK_DAY,
-    DEFAULT_START_OF_WEEK_DAY,
+    CONF_DEFAULT_START_OF_WEEK_DAY,
     API_CLUB_VISITS_TIMESTAMP_JSON_KEY,
-    ATTR_VISITS_THIS_YEAR,
-    ATTR_VISITS_THIS_MONTH,
-    ATTR_VISITS_THIS_WEEK,
-    ATTR_LAST_VISIT_TIMESTAMP,
+    VISITS_SENSOR_ATTR_VISITS_THIS_YEAR,
+    VISITS_SENSOR_ATTR_VISITS_THIS_MONTH,
+    VISITS_SENSOR_ATTR_VISITS_THIS_WEEK,
+    VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP,
 )
 
 SCAN_INTERVAL = timedelta(minutes=5)
@@ -26,7 +26,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     new_devices = [VisitsSensor(
         api_client,
-        config_entry.options.get(CONF_START_OF_WEEK_DAY, DEFAULT_START_OF_WEEK_DAY),
+        config_entry.options.get(CONF_START_OF_WEEK_DAY, CONF_DEFAULT_START_OF_WEEK_DAY),
     )]
 
     async_add_devices(new_devices, True)
@@ -56,7 +56,7 @@ class VisitsSensor(Entity):
 
     @property
     def unit_of_measurement(self):
-        return UNIT_OF_MEASUREMENT
+        return VISITS_SENSOR_UNIT_OF_MEASUREMENT
 
     async def async_update(self):
         await self._api_client.update()
@@ -81,10 +81,10 @@ class VisitsSensor(Entity):
             if last_visit_timestamp is None or visit_timestamp > last_visit_timestamp:
                 last_visit_timestamp = visit_timestamp
         self._attr_extra_state_attributes = {
-            ATTR_VISITS_THIS_YEAR: visits_this_year,
-            ATTR_VISITS_THIS_MONTH: visits_this_month,
-            ATTR_VISITS_THIS_WEEK: visits_this_week,
-            ATTR_LAST_VISIT_TIMESTAMP: last_visit_timestamp,
+            VISITS_SENSOR_ATTR_VISITS_THIS_YEAR: visits_this_year,
+            VISITS_SENSOR_ATTR_VISITS_THIS_MONTH: visits_this_month,
+            VISITS_SENSOR_ATTR_VISITS_THIS_WEEK: visits_this_week,
+            VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP: last_visit_timestamp,
         }
 
     @property
