@@ -1,18 +1,19 @@
 {
   "domain": "lifetime_fitness",
   "name": "Life Time Fitness",
-  "config_flow": true,
-  "documentation": "https://github.com/jsheputis/home-assistant-lifetime-fitness",
-  "issue_tracker": "https://github.com/jsheputis/home-assistant-lifetime-fitness/issues",
-  "requirements": [],
-  "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "dependencies": [],
   "codeowners": [
-    "@GuyLewin",
     "@jsheputis"
   ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/jsheputis/home-assistant-lifetime-fitness",
   "iot_class": "cloud_polling",
-  "version": "0.0.0-dev"
+  "issue_tracker": "https://github.com/jsheputis/home-assistant-lifetime-fitness/issues",
+  "loggers": [
+    "lifetime_fitness"
+  ],
+  "requirements": [],
+  "ssdp": [],
+  "version": "1.2.1",
+  "zeroconf": []
 }
