@@ -1,8 +1,6 @@
 {
     "name": "Life Time Fitness",
-    "render_readme": true,
     "country": ["US", "CA"],
-    "homeassistant": "2024.11.0",
-    "filename": "lifetime_fitness.zip",
-    "zip_release": true
+    "zip_release": true,
+    "filename": "lifetime_fitness.zip"
 }
