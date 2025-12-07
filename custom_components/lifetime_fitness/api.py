@@ -1,4 +1,5 @@
 """API client for Life Time Fitness."""
+
 from __future__ import annotations
 
 import logging
@@ -31,6 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 
 USER_AGENT = UserAgent().chrome
 
+
 def handle_authentication_response_json(
     response_json: dict[str, Any],
 ) -> LifetimeAuthentication:
@@ -47,7 +49,10 @@ def handle_authentication_response_json(
     if message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.SUCCESS]:
         return lifetime_authentication
 
-    if message == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED]:
+    if (
+        message
+        == AUTHENTICATION_RESPONSE_MESSAGES[AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED]
+    ):
         if lifetime_authentication.sso_id is not None:
             _LOGGER.warning("Life Time password needs to be changed, but API can still be used")
             return lifetime_authentication
@@ -115,9 +120,7 @@ class Api:
         except ClientResponseError as err:
             if err.status == HTTPStatus.UNAUTHORIZED:
                 raise ApiInvalidAuth from err
-            _LOGGER.error(
-                "Received unknown status code in authentication response: %d", err.status
-            )
+            _LOGGER.error("Received unknown status code in authentication response: %d", err.status)
             raise ApiUnknownAuthError from err
         except ClientConnectionError as err:
             _LOGGER.exception("Connection error while authenticating to Life Time API")
@@ -148,9 +151,7 @@ class Api:
                     raise ApiInvalidAuth("Profile request returned unauthorized")
 
                 if not profile_response.ok:
-                    _LOGGER.error(
-                        "Failed to fetch profile, status: %d", profile_response.status
-                    )
+                    _LOGGER.error("Failed to fetch profile, status: %d", profile_response.status)
                     raise ApiProfileError(
                         f"Profile request failed with status {profile_response.status}"
                     )
@@ -170,9 +171,7 @@ class Api:
 
                 member_id = member_details.get("memberId")
                 if member_id is None:
-                    _LOGGER.error(
-                        "Profile response missing memberId: %s", profile_response_json
-                    )
+                    _LOGGER.error("Profile response missing memberId: %s", profile_response_json)
                     raise ApiProfileError("Profile response missing memberId")
 
                 self._member_id = member_id
@@ -181,9 +180,7 @@ class Api:
             _LOGGER.exception("Connection error while fetching profile")
             raise ApiCannotConnect from err
 
-    async def _get_visits_between_dates(
-        self, start_date: date, end_date: date
-    ) -> dict[str, Any]:
+    async def _get_visits_between_dates(self, start_date: date, end_date: date) -> dict[str, Any]:
         """Get visit data between two dates."""
         if self._lifetime_authentication is None or self._lifetime_authentication.sso_id is None:
             raise ApiAuthRequired

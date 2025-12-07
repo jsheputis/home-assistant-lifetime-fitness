@@ -1,7 +1,6 @@
 """Tests for the Life Time Fitness data models."""
-from __future__ import annotations
 
-import pytest
+from __future__ import annotations
 
 from custom_components.lifetime_fitness.model import LifetimeAuthentication
 
@@ -21,13 +20,15 @@ class TestLifetimeAuthentication:
     def test_update_non_empty_initial(self) -> None:
         """Test update_non_empty on empty object."""
         auth = LifetimeAuthentication()
-        auth.update_non_empty({
-            "token": "test_token",
-            "ssoId": "test_sso",
-            "partyId": "test_party",
-            "message": "Success",
-            "status": "0",
-        })
+        auth.update_non_empty(
+            {
+                "token": "test_token",
+                "ssoId": "test_sso",
+                "partyId": "test_party",
+                "message": "Success",
+                "status": "0",
+            }
+        )
 
         assert auth.access_token == "test_token"
         assert auth.sso_id == "test_sso"
@@ -38,18 +39,22 @@ class TestLifetimeAuthentication:
     def test_update_non_empty_preserves_existing(self) -> None:
         """Test update_non_empty preserves existing values when new value is empty."""
         auth = LifetimeAuthentication()
-        auth.update_non_empty({
-            "token": "original_token",
-            "ssoId": "original_sso",
-            "message": "Success",
-        })
+        auth.update_non_empty(
+            {
+                "token": "original_token",
+                "ssoId": "original_sso",
+                "message": "Success",
+            }
+        )
 
         # Update with some empty values
-        auth.update_non_empty({
-            "token": "",  # Empty - should not overwrite
-            "ssoId": "new_sso",  # Non-empty - should overwrite
-            "message": None,  # None/empty - should not overwrite
-        })
+        auth.update_non_empty(
+            {
+                "token": "",  # Empty - should not overwrite
+                "ssoId": "new_sso",  # Non-empty - should overwrite
+                "message": None,  # None/empty - should not overwrite
+            }
+        )
 
         assert auth.access_token == "original_token"  # Preserved
         assert auth.sso_id == "new_sso"  # Updated
@@ -60,10 +65,12 @@ class TestLifetimeAuthentication:
         auth = LifetimeAuthentication()
         auth.update_non_empty({"token": "test_token"})
 
-        auth.update_non_empty({
-            "ssoId": "new_sso",
-            "partyId": "new_party",
-        })
+        auth.update_non_empty(
+            {
+                "ssoId": "new_sso",
+                "partyId": "new_party",
+            }
+        )
 
         assert auth.access_token == "test_token"
         assert auth.sso_id == "new_sso"
@@ -72,13 +79,15 @@ class TestLifetimeAuthentication:
     def test_property_accessors(self) -> None:
         """Test all property accessors work correctly."""
         auth = LifetimeAuthentication()
-        auth.update_non_empty({
-            "token": "access_token_value",
-            "ssoId": "sso_id_value",
-            "partyId": "party_id_value",
-            "message": "message_value",
-            "status": "status_value",
-        })
+        auth.update_non_empty(
+            {
+                "token": "access_token_value",
+                "ssoId": "sso_id_value",
+                "partyId": "party_id_value",
+                "message": "message_value",
+                "status": "status_value",
+            }
+        )
 
         assert auth.access_token == "access_token_value"
         assert auth.sso_id == "sso_id_value"

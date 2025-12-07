@@ -1,8 +1,8 @@
 """Tests for the Life Time Fitness coordinator."""
+
 from __future__ import annotations
 
-from datetime import date, timedelta
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -31,9 +31,7 @@ from .conftest import (
 class TestLifetimeFitnessCoordinator:
     """Tests for LifetimeFitnessCoordinator."""
 
-    async def test_init(
-        self, hass: HomeAssistant, mock_api_authenticated: Api
-    ) -> None:
+    async def test_init(self, hass: HomeAssistant, mock_api_authenticated: Api) -> None:
         """Test coordinator initialization."""
         coordinator = LifetimeFitnessCoordinator(
             hass,

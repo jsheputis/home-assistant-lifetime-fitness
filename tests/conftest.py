@@ -1,20 +1,19 @@
 """Pytest configuration and fixtures for Life Time Fitness tests."""
+
 from __future__ import annotations
 
 from collections.abc import Generator
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import ClientSession
-
 from homeassistant.core import HomeAssistant
 
 from custom_components.lifetime_fitness.api import Api
 from custom_components.lifetime_fitness.const import (
     CONF_PASSWORD,
     CONF_USERNAME,
-    DOMAIN,
 )
 from custom_components.lifetime_fitness.coordinator import (
     LifetimeFitnessCoordinator,

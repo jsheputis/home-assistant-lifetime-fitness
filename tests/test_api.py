@@ -1,39 +1,38 @@
 """Tests for the Life Time Fitness API client."""
+
 from __future__ import annotations
 
-from http import HTTPStatus
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from aiohttp import ClientConnectionError, ClientResponseError
+from aiohttp import ClientConnectionError
 
 from custom_components.lifetime_fitness.api import (
     Api,
     ApiActivationRequired,
+    ApiAuthRequired,
     ApiCannotConnect,
     ApiDuplicateEmail,
     ApiInvalidAuth,
     ApiPasswordNeedsToBeChanged,
     ApiTooManyAuthenticationAttempts,
     ApiUnknownAuthError,
-    ApiAuthExpired,
-    ApiAuthRequired,
     handle_authentication_response_json,
 )
 from custom_components.lifetime_fitness.model import LifetimeAuthentication
 
 from .conftest import (
-    MOCK_AUTH_RESPONSE_SUCCESS,
-    MOCK_AUTH_RESPONSE_INVALID,
-    MOCK_AUTH_RESPONSE_TOO_MANY_ATTEMPTS,
     MOCK_AUTH_RESPONSE_ACTIVATION_REQUIRED,
     MOCK_AUTH_RESPONSE_DUPLICATE_EMAIL,
+    MOCK_AUTH_RESPONSE_INVALID,
     MOCK_AUTH_RESPONSE_PASSWORD_CHANGE,
+    MOCK_AUTH_RESPONSE_SUCCESS,
+    MOCK_AUTH_RESPONSE_TOO_MANY_ATTEMPTS,
     MOCK_PROFILE_RESPONSE,
-    MOCK_VISITS_RESPONSE_WITH_DATA,
     MOCK_VISITS_RESPONSE_EMPTY,
-    TEST_USERNAME,
+    MOCK_VISITS_RESPONSE_WITH_DATA,
     TEST_PASSWORD,
+    TEST_USERNAME,
 )
 
 
@@ -150,9 +149,7 @@ class TestApiClient:
         mock_api._lifetime_authentication.sso_id = None
 
         with pytest.raises(ApiAuthRequired):
-            await mock_api._get_visits_between_dates(
-                start_date=MagicMock(), end_date=MagicMock()
-            )
+            await mock_api._get_visits_between_dates(start_date=MagicMock(), end_date=MagicMock())
 
     async def test_update_visits_success(self, mock_api_authenticated: Api) -> None:
         """Test successful visits update."""

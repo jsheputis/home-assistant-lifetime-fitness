@@ -1,4 +1,5 @@
 """Sensor platform for Life Time Fitness integration."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -82,9 +83,7 @@ async def async_setup_entry(
     )
 
 
-class LifetimeFitnessSensor(
-    CoordinatorEntity[LifetimeFitnessCoordinator], SensorEntity
-):
+class LifetimeFitnessSensor(CoordinatorEntity[LifetimeFitnessCoordinator], SensorEntity):
     """Representation of a Life Time Fitness sensor."""
 
     entity_description: LifetimeFitnessSensorEntityDescription
@@ -125,9 +124,9 @@ class LifetimeFitnessSensor(
             self.entity_description.device_class == SensorDeviceClass.TIMESTAMP
             and value is not None
         ):
-            from datetime import datetime, timezone
+            from datetime import UTC, datetime
 
-            return datetime.fromtimestamp(value, tz=timezone.utc)
+            return datetime.fromtimestamp(value, tz=UTC)
 
         return value
 

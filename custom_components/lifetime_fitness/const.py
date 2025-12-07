@@ -1,4 +1,5 @@
 """Constants for the Life Time Fitness integration."""
+
 from __future__ import annotations
 
 import enum
@@ -58,12 +59,11 @@ class AuthenticationResults(enum.Enum):
 AUTHENTICATION_RESPONSE_MESSAGES = {
     AuthenticationResults.SUCCESS: "Success",
     AuthenticationResults.PASSWORD_NEEDS_TO_BE_CHANGED: "Password needs to be changed.",
-    AuthenticationResults.INVALID: "Invalid username or password"
+    AuthenticationResults.INVALID: "Invalid username or password",
 }
 AUTHENTICATION_RESPONSE_STATUSES = {
     AuthenticationResults.INVALID: "-201",
     AuthenticationResults.TOO_MANY_ATTEMPTS: "-207",
     AuthenticationResults.ACTIVATION_REQUIRED: "-208",
-    AuthenticationResults.DUPLICATE_EMAIL: "-209"
+    AuthenticationResults.DUPLICATE_EMAIL: "-209",
 }
-

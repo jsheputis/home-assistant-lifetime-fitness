@@ -1,8 +1,8 @@
 """Life Time Fitness integration."""
+
 from __future__ import annotations
 
 import logging
-from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -26,7 +26,7 @@ from .const import (
     CONF_PASSWORD,
     CONF_START_OF_WEEK_DAY,
     CONF_USERNAME,
-    DOMAIN,
+    DOMAIN as DOMAIN,
     ISSUE_URL,
     VERSION,
 )
@@ -38,7 +38,7 @@ PLATFORMS: list[Platform] = [
 
 _LOGGER = logging.getLogger(__name__)
 
-LifetimeFitnessConfigEntry: TypeAlias = ConfigEntry[LifetimeFitnessCoordinator]
+type LifetimeFitnessConfigEntry = ConfigEntry[LifetimeFitnessCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: LifetimeFitnessConfigEntry) -> bool:
@@ -82,9 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: LifetimeFitnessConfigEnt
         raise ConfigEntryAuthFailed("Account activation required") from err
     except ApiDuplicateEmail as err:
         _LOGGER.error("Duplicate email for Life Time Fitness account: %s", err)
-        raise ConfigEntryAuthFailed(
-            "Multiple accounts associated with this email"
-        ) from err
+        raise ConfigEntryAuthFailed("Multiple accounts associated with this email") from err
     except ApiUnknownAuthError as err:
         _LOGGER.error("Unknown authentication error for Life Time Fitness: %s", err)
         raise ConfigEntryNotReady("Unknown authentication error occurred") from err
