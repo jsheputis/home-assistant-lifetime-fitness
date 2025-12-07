@@ -240,6 +240,7 @@ class Api:
         except ClientError:
             self.update_successful = False
             _LOGGER.exception("Unexpected client error during Life Time API update")
+            raise
         except Exception:
             self.update_successful = False
             _LOGGER.exception("Unexpected exception during Life Time API update")
