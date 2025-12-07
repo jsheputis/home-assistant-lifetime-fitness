@@ -1,8 +1,7 @@
 """Life Time Fitness integration."""
-
 from __future__ import annotations
-import logging
 
+import logging
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -10,23 +9,28 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .api import Api
-from .const import DOMAIN, VERSION, ISSUE_URL, CONF_USERNAME, CONF_PASSWORD
+from .const import CONF_PASSWORD, CONF_USERNAME, DOMAIN, ISSUE_URL, VERSION
 
-PLATFORMS: list[str] = [
+PLATFORMS: list[Platform] = [
     Platform.SENSOR,
 ]
+
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up lifetime-fitness from a config entry."""
+    """Set up Life Time Fitness from a config entry."""
     _LOGGER.info(
-        "Version %s is starting, if you have any issues please report" " them here: %s",
+        "Version %s is starting, if you have any issues please report them here: %s",
         VERSION,
         ISSUE_URL,
     )
-    username, password = entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD]
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = Api(async_create_clientsession(hass), username, password)
+
+    username: str = entry.data[CONF_USERNAME]
+    password: str = entry.data[CONF_PASSWORD]
+
+    api_client = Api(async_create_clientsession(hass), username, password)
+    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = api_client
 
     entry.async_on_unload(entry.add_update_listener(options_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -34,7 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry):
+async def options_update_listener(hass: HomeAssistant, config_entry: ConfigEntry) -> None:
     """Handle options update."""
     await hass.config_entries.async_reload(config_entry.entry_id)
 

@@ -1,48 +1,46 @@
+"""Data models for the Life Time Fitness integration."""
+from __future__ import annotations
+
 from collections import UserDict
+from typing import Any
 
-from .const import (
-    AuthenticationResults,
-)
 
-import logging
+class LifetimeAuthentication(UserDict[str, Any]):
+    """Life Time Fitness authentication data container."""
 
-_LOGGER = logging.getLogger(__name__)
+    def update_non_empty(self, data: dict[str, Any]) -> None:
+        """Update this object with non-empty data from `data`.
 
-class LifetimeAuthentication(UserDict):
-    """Lifetime Fitness Authentication Data."""
-    
-    def update_non_empty(self, data) -> None:
-        """Update this object with non-empty data from `data`."""
+        On first call, all fields are stored. On subsequent calls,
+        only non-empty values are updated to preserve existing data.
+        """
         if not self.data:
-            # Start out with all fields
             super().update(data)
         else:
             filtered = {k: v for (k, v) in data.items() if v}
             super().update(filtered)
-            
+
     @property
-    def access_token(self) -> str:
-        """Access token"""
+    def access_token(self) -> str | None:
+        """Return the access token."""
         return self.get("token")
-    
+
     @property
-    def sso_id(self) -> str:
-        """SSO ID"""
+    def sso_id(self) -> str | None:
+        """Return the SSO ID."""
         return self.get("ssoId")
-    
+
     @property
-    def party_id(self) -> str:
-        """Party ID"""
+    def party_id(self) -> str | None:
+        """Return the party ID."""
         return self.get("partyId")
-    
+
     @property
-    def message(self) -> str:
-        """Message"""
+    def message(self) -> str | None:
+        """Return the response message."""
         return self.get("message")
-    
+
     @property
-    def status(self) -> str:
-        """Status"""
+    def status(self) -> str | None:
+        """Return the response status."""
         return self.get("status")
-    
-    
