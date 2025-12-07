@@ -46,6 +46,7 @@ async def test_form_user_success(hass: HomeAssistant) -> None:
     with (
         patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class,
         patch("custom_components.lifetime_fitness.config_flow.async_create_clientsession"),
+        patch("custom_components.lifetime_fitness.async_setup_entry", return_value=True),
     ):
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock()
