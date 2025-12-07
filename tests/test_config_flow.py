@@ -1,4 +1,5 @@
 """Tests for the Life Time Fitness config flow."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -42,9 +43,7 @@ async def test_form_user_success(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock()
         mock_api_class.return_value = mock_api
@@ -71,9 +70,7 @@ async def test_form_cannot_connect(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiCannotConnect())
         mock_api_class.return_value = mock_api
@@ -96,9 +93,7 @@ async def test_form_invalid_auth(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiInvalidAuth())
         mock_api_class.return_value = mock_api
@@ -121,9 +116,7 @@ async def test_form_password_needs_change(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiPasswordNeedsToBeChanged())
         mock_api_class.return_value = mock_api
@@ -146,9 +139,7 @@ async def test_form_too_many_attempts(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiTooManyAuthenticationAttempts())
         mock_api_class.return_value = mock_api
@@ -171,9 +162,7 @@ async def test_form_activation_required(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiActivationRequired())
         mock_api_class.return_value = mock_api
@@ -196,9 +185,7 @@ async def test_form_duplicate_email(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiDuplicateEmail())
         mock_api_class.return_value = mock_api
@@ -221,9 +208,7 @@ async def test_form_unknown_auth_error(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=ApiUnknownAuthError())
         mock_api_class.return_value = mock_api
@@ -246,9 +231,7 @@ async def test_form_unexpected_exception(hass: HomeAssistant) -> None:
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "custom_components.lifetime_fitness.config_flow.Api"
-    ) as mock_api_class:
+    with patch("custom_components.lifetime_fitness.config_flow.Api") as mock_api_class:
         mock_api = AsyncMock()
         mock_api.authenticate = AsyncMock(side_effect=Exception("Unexpected error"))
         mock_api_class.return_value = mock_api

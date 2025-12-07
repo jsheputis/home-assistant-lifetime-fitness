@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures for Life Time Fitness tests."""
+
 from __future__ import annotations
 
 from collections.abc import Generator

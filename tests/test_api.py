@@ -1,4 +1,5 @@
 """Tests for the Life Time Fitness API client."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -148,9 +149,7 @@ class TestApiClient:
         mock_api._lifetime_authentication.sso_id = None
 
         with pytest.raises(ApiAuthRequired):
-            await mock_api._get_visits_between_dates(
-                start_date=MagicMock(), end_date=MagicMock()
-            )
+            await mock_api._get_visits_between_dates(start_date=MagicMock(), end_date=MagicMock())
 
     async def test_update_visits_success(self, mock_api_authenticated: Api) -> None:
         """Test successful visits update."""

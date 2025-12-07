@@ -1,4 +1,5 @@
 """Tests for the Life Time Fitness sensor platform."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -57,9 +58,7 @@ class TestSensorDescriptions:
 class TestLifetimeFitnessSensor:
     """Tests for LifetimeFitnessSensor."""
 
-    def test_sensor_init(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_sensor_init(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test sensor initialization."""
         description = SENSOR_DESCRIPTIONS[0]  # total_visits
         sensor = LifetimeFitnessSensor(
@@ -72,9 +71,7 @@ class TestLifetimeFitnessSensor:
         assert sensor._attr_has_entity_name is True
         assert sensor.entity_description == description
 
-    def test_sensor_device_info(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_sensor_device_info(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test sensor device info."""
         description = SENSOR_DESCRIPTIONS[0]
         sensor = LifetimeFitnessSensor(
@@ -89,9 +86,7 @@ class TestLifetimeFitnessSensor:
         assert f"Life Time Fitness ({TEST_USERNAME})" in device_info["name"]
         assert device_info["manufacturer"] == "Life Time Fitness"
 
-    def test_native_value_total_visits(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_native_value_total_visits(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test native_value for total visits sensor."""
         description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "total_visits")
         sensor = LifetimeFitnessSensor(
@@ -158,9 +153,7 @@ class TestLifetimeFitnessSensor:
         # 1701561600.0 = Dec 3, 2023 00:00:00 UTC
         assert value == datetime(2023, 12, 3, 0, 0, 0, tzinfo=UTC)
 
-    def test_native_value_when_no_data(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_native_value_when_no_data(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test native_value when coordinator has no data."""
         mock_coordinator.data = None
         description = SENSOR_DESCRIPTIONS[0]
@@ -199,9 +192,7 @@ class TestLifetimeFitnessSensor:
 
         assert sensor.available is False
 
-    def test_unavailable_when_no_data(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_unavailable_when_no_data(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test availability when no data."""
         mock_coordinator.data = None
         description = SENSOR_DESCRIPTIONS[0]
@@ -213,9 +204,7 @@ class TestLifetimeFitnessSensor:
 
         assert sensor.available is False
 
-    def test_last_visit_null_timestamp(
-        self, mock_coordinator: LifetimeFitnessCoordinator
-    ) -> None:
+    def test_last_visit_null_timestamp(self, mock_coordinator: LifetimeFitnessCoordinator) -> None:
         """Test last visit sensor when timestamp is None."""
         mock_coordinator.data = LifetimeFitnessData(
             total_visits=0,

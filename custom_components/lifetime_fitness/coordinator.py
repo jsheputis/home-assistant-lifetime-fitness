@@ -1,4 +1,5 @@
 """DataUpdateCoordinator for Life Time Fitness integration."""
+
 from __future__ import annotations
 
 import logging

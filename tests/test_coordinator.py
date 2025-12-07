@@ -1,4 +1,5 @@
 """Tests for the Life Time Fitness coordinator."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock
@@ -30,9 +31,7 @@ from .conftest import (
 class TestLifetimeFitnessCoordinator:
     """Tests for LifetimeFitnessCoordinator."""
 
-    async def test_init(
-        self, hass: HomeAssistant, mock_api_authenticated: Api
-    ) -> None:
+    async def test_init(self, hass: HomeAssistant, mock_api_authenticated: Api) -> None:
         """Test coordinator initialization."""
         coordinator = LifetimeFitnessCoordinator(
             hass,

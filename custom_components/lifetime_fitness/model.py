@@ -1,4 +1,5 @@
 """Data models for the Life Time Fitness integration."""
+
 from __future__ import annotations
 
 from collections import UserDict

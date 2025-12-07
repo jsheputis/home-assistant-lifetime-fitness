@@ -1,4 +1,5 @@
 """Tests for the Life Time Fitness integration setup."""
+
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
