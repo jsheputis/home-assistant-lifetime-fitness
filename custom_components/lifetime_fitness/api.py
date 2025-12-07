@@ -233,9 +233,17 @@ class Api:
                 )
             # Update succeeded - clear any previous failure state
             self.update_successful = True
+        except (ApiCannotConnect, ApiAuthRequired) as err:
+            self.update_successful = False
+            _LOGGER.error("API error during Life Time update: %s", err)
+            raise
         except ClientError:
             self.update_successful = False
+            _LOGGER.exception("Unexpected client error during Life Time API update")
+        except Exception:
+            self.update_successful = False
             _LOGGER.exception("Unexpected exception during Life Time API update")
+            raise
 
 
 class ApiCannotConnect(Exception):
