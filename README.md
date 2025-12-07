@@ -21,7 +21,7 @@ This integration uses [Life Time Fitness](https://www.lifetime.life)'s API to fe
 
 1. Open HACS and search for `Life Time Fitness`
 1. Click `Download`
-1. Continue to [Setup](README.md#Setup)
+1. Continue to [Configuration](#configuration)
 
 ## 2. Manual Installation
 
