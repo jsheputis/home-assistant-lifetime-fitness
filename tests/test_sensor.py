@@ -1,179 +1,238 @@
 """Tests for the Life Time Fitness sensor platform."""
 from __future__ import annotations
 
-from datetime import date, timedelta
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 import pytest
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
 
-from custom_components.lifetime_fitness.sensor import VisitsSensor
-from custom_components.lifetime_fitness.const import (
-    VISITS_SENSOR_ATTR_VISITS_THIS_YEAR,
-    VISITS_SENSOR_ATTR_VISITS_THIS_MONTH,
-    VISITS_SENSOR_ATTR_VISITS_THIS_WEEK,
-    VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP,
-    VISITS_SENSOR_UNIT_OF_MEASUREMENT,
+from custom_components.lifetime_fitness.coordinator import (
+    LifetimeFitnessCoordinator,
+    LifetimeFitnessData,
+)
+from custom_components.lifetime_fitness.sensor import (
+    SENSOR_DESCRIPTIONS,
+    LifetimeFitnessSensor,
 )
 
-from .conftest import TEST_USERNAME
+from .conftest import TEST_ENTRY_ID, TEST_USERNAME
 
 
-class TestVisitsSensor:
-    """Tests for the VisitsSensor class."""
+class TestSensorDescriptions:
+    """Tests for sensor entity descriptions."""
 
-    def test_init(self, mock_api_authenticated: MagicMock) -> None:
+    def test_total_visits_description(self) -> None:
+        """Test total visits sensor description."""
+        desc = next(d for d in SENSOR_DESCRIPTIONS if d.key == "total_visits")
+        assert desc.translation_key == "total_visits"
+        assert desc.native_unit_of_measurement == "visits"
+        assert desc.state_class == SensorStateClass.TOTAL
+
+    def test_visits_this_year_description(self) -> None:
+        """Test visits this year sensor description."""
+        desc = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_year")
+        assert desc.translation_key == "visits_this_year"
+        assert desc.state_class == SensorStateClass.MEASUREMENT
+
+    def test_visits_this_month_description(self) -> None:
+        """Test visits this month sensor description."""
+        desc = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_month")
+        assert desc.translation_key == "visits_this_month"
+        assert desc.state_class == SensorStateClass.MEASUREMENT
+
+    def test_visits_this_week_description(self) -> None:
+        """Test visits this week sensor description."""
+        desc = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_week")
+        assert desc.translation_key == "visits_this_week"
+        assert desc.state_class == SensorStateClass.MEASUREMENT
+
+    def test_last_visit_description(self) -> None:
+        """Test last visit sensor description."""
+        desc = next(d for d in SENSOR_DESCRIPTIONS if d.key == "last_visit")
+        assert desc.translation_key == "last_visit"
+        assert desc.device_class == SensorDeviceClass.TIMESTAMP
+        assert desc.entity_category == EntityCategory.DIAGNOSTIC
+
+
+class TestLifetimeFitnessSensor:
+    """Tests for LifetimeFitnessSensor."""
+
+    def test_sensor_init(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
         """Test sensor initialization."""
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
+        description = SENSOR_DESCRIPTIONS[0]  # total_visits
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
 
-        assert sensor.name == f"{TEST_USERNAME} Life Time Visits"
-        assert sensor.unique_id == f"{TEST_USERNAME}_lifetime_visits"
-        assert sensor.unit_of_measurement == VISITS_SENSOR_UNIT_OF_MEASUREMENT
-        assert sensor.should_poll is True
+        assert sensor.unique_id == f"{TEST_ENTRY_ID}_{description.key}"
+        assert sensor._attr_has_entity_name is True
+        assert sensor.entity_description == description
 
-    def test_available_when_update_successful(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor availability when update is successful."""
-        mock_api_authenticated.update_successful = True
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
+    def test_sensor_device_info(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test sensor device info."""
+        description = SENSOR_DESCRIPTIONS[0]
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        device_info = sensor._attr_device_info
+        assert device_info is not None
+        assert ("lifetime_fitness", TEST_ENTRY_ID) in device_info["identifiers"]
+        assert f"Life Time Fitness ({TEST_USERNAME})" in device_info["name"]
+        assert device_info["manufacturer"] == "Life Time Fitness"
+
+    def test_native_value_total_visits(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value for total visits sensor."""
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "total_visits")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        assert sensor.native_value == 10  # From mock_coordinator_data
+
+    def test_native_value_visits_this_year(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value for visits this year sensor."""
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_year")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        assert sensor.native_value == 8  # From mock_coordinator_data
+
+    def test_native_value_visits_this_month(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value for visits this month sensor."""
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_month")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        assert sensor.native_value == 3  # From mock_coordinator_data
+
+    def test_native_value_visits_this_week(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value for visits this week sensor."""
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "visits_this_week")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        assert sensor.native_value == 2  # From mock_coordinator_data
+
+    def test_native_value_last_visit_timestamp(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value for last visit sensor returns datetime."""
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "last_visit")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        value = sensor.native_value
+        assert isinstance(value, datetime)
+        assert value.tzinfo == timezone.utc
+        # 1701561600.0 = Dec 3, 2023 00:00:00 UTC
+        assert value == datetime(2023, 12, 3, 0, 0, 0, tzinfo=timezone.utc)
+
+    def test_native_value_when_no_data(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test native_value when coordinator has no data."""
+        mock_coordinator.data = None
+        description = SENSOR_DESCRIPTIONS[0]
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
+
+        assert sensor.native_value is None
+
+    def test_available_when_update_success(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test availability when update is successful."""
+        description = SENSOR_DESCRIPTIONS[0]
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
 
         assert sensor.available is True
 
-    def test_unavailable_when_update_failed(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor availability when update failed."""
-        mock_api_authenticated.update_successful = False
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
+    def test_unavailable_when_update_failed(
+        self, mock_coordinator: LifetimeFitnessCoordinator
+    ) -> None:
+        """Test availability when update failed."""
+        mock_coordinator.last_update_success = False
+        description = SENSOR_DESCRIPTIONS[0]
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
 
         assert sensor.available is False
 
-    def test_state_with_visits(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor state with visit data."""
-        mock_api_authenticated.result_json = {
-            "data": [
-                {"usageDateTime": 1701388800000},
-                {"usageDateTime": 1701475200000},
-            ]
-        }
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-
-        assert sensor.state == 2
-
-    def test_state_with_no_visits(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor state with no visits."""
-        mock_api_authenticated.result_json = {"data": []}
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-
-        assert sensor.state == 0
-
-    def test_state_with_null_result(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor state when result_json is None."""
-        mock_api_authenticated.result_json = None
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-
-        assert sensor.state == 0
-
-    def test_state_with_null_data(self, mock_api_authenticated: MagicMock) -> None:
-        """Test sensor state when data is None."""
-        mock_api_authenticated.result_json = {"data": None}
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-
-        assert sensor.state == 0
-
-    async def test_async_update_with_visits(self, mock_api_authenticated: MagicMock) -> None:
-        """Test async_update with visit data."""
-        today = date.today()
-        current_year = today.year
-        current_month = today.month
-
-        # Create timestamps for visits
-        today_timestamp = today.replace(hour=12).strftime("%s")
-        today_ms = int(today_timestamp) * 1000
-
-        yesterday = today - timedelta(days=1)
-        yesterday_ms = int(yesterday.strftime("%s")) * 1000
-
-        mock_api_authenticated.result_json = {
-            "data": [
-                {"usageDateTime": today_ms},
-                {"usageDateTime": yesterday_ms},
-            ]
-        }
-        mock_api_authenticated.update = AsyncMock()
-
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        await sensor.async_update()
-
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_YEAR] >= 2
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_MONTH] >= 0
-        assert VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP in sensor._attr_extra_state_attributes
-
-    async def test_async_update_with_empty_data(self, mock_api_authenticated: MagicMock) -> None:
-        """Test async_update with empty visit data."""
-        mock_api_authenticated.result_json = {"data": []}
-        mock_api_authenticated.update = AsyncMock()
-
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        await sensor.async_update()
-
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_YEAR] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_MONTH] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_WEEK] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP] is None
-
-    async def test_async_update_with_null_result(self, mock_api_authenticated: MagicMock) -> None:
-        """Test async_update when result_json is None."""
-        mock_api_authenticated.result_json = None
-        mock_api_authenticated.update = AsyncMock()
-
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        await sensor.async_update()
-
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_YEAR] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_MONTH] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_VISITS_THIS_WEEK] == 0
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP] is None
-
-    async def test_async_update_with_missing_timestamp(
-        self, mock_api_authenticated: MagicMock
+    def test_unavailable_when_no_data(
+        self, mock_coordinator: LifetimeFitnessCoordinator
     ) -> None:
-        """Test async_update handles missing timestamp gracefully."""
-        mock_api_authenticated.result_json = {
-            "data": [
-                {"usageDateTime": 1701388800000},
-                {"someOtherField": "value"},  # Missing timestamp
-            ]
-        }
-        mock_api_authenticated.update = AsyncMock()
+        """Test availability when no data."""
+        mock_coordinator.data = None
+        description = SENSOR_DESCRIPTIONS[0]
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
 
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        await sensor.async_update()
+        assert sensor.available is False
 
-        # Should process the valid visit and skip the invalid one
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP] is not None
-
-    async def test_async_update_with_invalid_timestamp(
-        self, mock_api_authenticated: MagicMock
+    def test_last_visit_null_timestamp(
+        self, mock_coordinator: LifetimeFitnessCoordinator
     ) -> None:
-        """Test async_update handles invalid timestamp gracefully."""
-        mock_api_authenticated.result_json = {
-            "data": [
-                {"usageDateTime": "not_a_number"},
-                {"usageDateTime": 1701388800000},  # Valid timestamp
-            ]
-        }
-        mock_api_authenticated.update = AsyncMock()
+        """Test last visit sensor when timestamp is None."""
+        mock_coordinator.data = LifetimeFitnessData(
+            total_visits=0,
+            visits_this_year=0,
+            visits_this_month=0,
+            visits_this_week=0,
+            last_visit_timestamp=None,
+            raw_visits=[],
+        )
+        description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "last_visit")
+        sensor = LifetimeFitnessSensor(
+            mock_coordinator,
+            description,
+            TEST_ENTRY_ID,
+        )
 
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        await sensor.async_update()
-
-        # Should process the valid visit and skip the invalid one
-        assert sensor._attr_extra_state_attributes[VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP] is not None
-
-    def test_week_calculation_monday_start(self, mock_api_authenticated: MagicMock) -> None:
-        """Test week calculation with Monday as start of week."""
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=0)
-        assert sensor._start_of_week_day == 0
-
-    def test_week_calculation_sunday_start(self, mock_api_authenticated: MagicMock) -> None:
-        """Test week calculation with Sunday as start of week."""
-        sensor = VisitsSensor(mock_api_authenticated, start_of_week_day=6)
-        assert sensor._start_of_week_day == 6
+        assert sensor.native_value is None

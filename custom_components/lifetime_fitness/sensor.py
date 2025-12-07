@@ -1,147 +1,137 @@
 """Sensor platform for Life Time Fitness integration."""
 from __future__ import annotations
 
-import logging
-from datetime import date, timedelta
+from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-from .api import Api
-from .const import (
-    DOMAIN,
-    VISITS_SENSOR_UNIT_OF_MEASUREMENT,
-    VISITS_SENSOR_ID_SUFFIX,
-    VISITS_SENSOR_NAME_SUFFIX,
-    CONF_START_OF_WEEK_DAY,
-    CONF_DEFAULT_START_OF_WEEK_DAY,
-    API_CLUB_VISITS_TIMESTAMP_JSON_KEY,
-    VISITS_SENSOR_ATTR_VISITS_THIS_YEAR,
-    VISITS_SENSOR_ATTR_VISITS_THIS_MONTH,
-    VISITS_SENSOR_ATTR_VISITS_THIS_WEEK,
-    VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP,
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorEntityDescription,
+    SensorStateClass,
 )
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-_LOGGER = logging.getLogger(__name__)
+from . import LifetimeFitnessConfigEntry
+from .const import DOMAIN
+from .coordinator import LifetimeFitnessCoordinator, LifetimeFitnessData
 
-SCAN_INTERVAL = timedelta(minutes=5)
+
+@dataclass(frozen=True, kw_only=True)
+class LifetimeFitnessSensorEntityDescription(SensorEntityDescription):
+    """Describes a Life Time Fitness sensor entity."""
+
+    value_fn: Callable[[LifetimeFitnessData], Any]
+
+
+SENSOR_DESCRIPTIONS: tuple[LifetimeFitnessSensorEntityDescription, ...] = (
+    LifetimeFitnessSensorEntityDescription(
+        key="total_visits",
+        translation_key="total_visits",
+        native_unit_of_measurement="visits",
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda data: data.total_visits,
+    ),
+    LifetimeFitnessSensorEntityDescription(
+        key="visits_this_year",
+        translation_key="visits_this_year",
+        native_unit_of_measurement="visits",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.visits_this_year,
+    ),
+    LifetimeFitnessSensorEntityDescription(
+        key="visits_this_month",
+        translation_key="visits_this_month",
+        native_unit_of_measurement="visits",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.visits_this_month,
+    ),
+    LifetimeFitnessSensorEntityDescription(
+        key="visits_this_week",
+        translation_key="visits_this_week",
+        native_unit_of_measurement="visits",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda data: data.visits_this_week,
+    ),
+    LifetimeFitnessSensorEntityDescription(
+        key="last_visit",
+        translation_key="last_visit",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda data: data.last_visit_timestamp,
+    ),
+)
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    entry: LifetimeFitnessConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Life Time Fitness sensor platform."""
-    api_client: Api = hass.data[DOMAIN][config_entry.entry_id]
-    await api_client.authenticate()
+    """Set up Life Time Fitness sensors from a config entry."""
+    coordinator = entry.runtime_data
 
-    start_of_week_day = config_entry.options.get(
-        CONF_START_OF_WEEK_DAY, CONF_DEFAULT_START_OF_WEEK_DAY
+    async_add_entities(
+        LifetimeFitnessSensor(coordinator, description, entry.entry_id)
+        for description in SENSOR_DESCRIPTIONS
     )
-    async_add_entities([VisitsSensor(api_client, start_of_week_day)], True)
 
 
-class VisitsSensor(Entity):
-    """Sensor entity for Life Time Fitness visit tracking."""
+class LifetimeFitnessSensor(
+    CoordinatorEntity[LifetimeFitnessCoordinator], SensorEntity
+):
+    """Representation of a Life Time Fitness sensor."""
 
-    should_poll = True
+    entity_description: LifetimeFitnessSensorEntityDescription
+    _attr_has_entity_name = True
 
-    def __init__(self, api_client: Api, start_of_week_day: int) -> None:
-        """Initialize the visits sensor."""
-        self._api_client = api_client
-        self._name = f"{api_client.get_username()}{VISITS_SENSOR_NAME_SUFFIX}"
-        self._unique_id = f"{api_client.get_username()}{VISITS_SENSOR_ID_SUFFIX}"
-        self._start_of_week_day = start_of_week_day
-        self._attr_extra_state_attributes: dict[str, Any] = {}
+    def __init__(
+        self,
+        coordinator: LifetimeFitnessCoordinator,
+        description: LifetimeFitnessSensorEntityDescription,
+        entry_id: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self.entity_description = description
+
+        # Use entry_id + key for unique_id to ensure uniqueness
+        self._attr_unique_id = f"{entry_id}_{description.key}"
+
+        # Device info for grouping entities under a device
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry_id)},
+            name=f"Life Time Fitness ({coordinator.username})",
+            manufacturer="Life Time Fitness",
+            entry_type=DeviceEntryType.SERVICE,
+            configuration_url="https://my.lifetime.life",
+        )
 
     @property
-    def unique_id(self) -> str:
-        """Return the unique ID of the sensor."""
-        return self._unique_id
+    def native_value(self) -> Any:
+        """Return the state of the sensor."""
+        if self.coordinator.data is None:
+            return None
 
-    @property
-    def name(self) -> str:
-        """Return the name of the sensor."""
-        return self._name
+        value = self.entity_description.value_fn(self.coordinator.data)
+
+        # Convert timestamp to datetime for timestamp sensor
+        if (
+            self.entity_description.device_class == SensorDeviceClass.TIMESTAMP
+            and value is not None
+        ):
+            from datetime import datetime, timezone
+
+            return datetime.fromtimestamp(value, tz=timezone.utc)
+
+        return value
 
     @property
     def available(self) -> bool:
-        """Return True if the sensor is available."""
-        return self._api_client.update_successful
-
-    @property
-    def unit_of_measurement(self) -> str:
-        """Return the unit of measurement."""
-        return VISITS_SENSOR_UNIT_OF_MEASUREMENT
-
-    def _get_visits_data(self) -> list[dict[str, Any]]:
-        """Safely get visits data from the API response."""
-        if self._api_client.result_json is None:
-            return []
-        data = self._api_client.result_json.get("data")
-        if data is None:
-            return []
-        return data
-
-    async def async_update(self) -> None:
-        """Fetch new state data for the sensor."""
-        await self._api_client.update()
-
-        visits = self._get_visits_data()
-        if not visits:
-            self._attr_extra_state_attributes = {
-                VISITS_SENSOR_ATTR_VISITS_THIS_YEAR: 0,
-                VISITS_SENSOR_ATTR_VISITS_THIS_MONTH: 0,
-                VISITS_SENSOR_ATTR_VISITS_THIS_WEEK: 0,
-                VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP: None,
-            }
-            return
-
-        today = date.today()
-        beginning_of_week_offset = (today.weekday() - self._start_of_week_day) % 7
-        beginning_of_week_date = today - timedelta(days=beginning_of_week_offset)
-
-        last_visit_timestamp: float | None = None
-        visits_this_year = 0
-        visits_this_month = 0
-        visits_this_week = 0
-
-        for visit in visits:
-            timestamp_ms = visit.get(API_CLUB_VISITS_TIMESTAMP_JSON_KEY)
-            if timestamp_ms is None:
-                _LOGGER.warning("Visit data missing timestamp: %s", visit)
-                continue
-
-            try:
-                visit_timestamp = timestamp_ms / 1000
-                visit_date = date.fromtimestamp(visit_timestamp)
-            except (TypeError, ValueError, OSError) as err:
-                _LOGGER.warning("Invalid visit timestamp %s: %s", timestamp_ms, err)
-                continue
-
-            if visit_date.year == today.year:
-                visits_this_year += 1
-                if visit_date.month == today.month:
-                    visits_this_month += 1
-
-            if visit_date >= beginning_of_week_date:
-                visits_this_week += 1
-
-            if last_visit_timestamp is None or visit_timestamp > last_visit_timestamp:
-                last_visit_timestamp = visit_timestamp
-
-        self._attr_extra_state_attributes = {
-            VISITS_SENSOR_ATTR_VISITS_THIS_YEAR: visits_this_year,
-            VISITS_SENSOR_ATTR_VISITS_THIS_MONTH: visits_this_month,
-            VISITS_SENSOR_ATTR_VISITS_THIS_WEEK: visits_this_week,
-            VISITS_SENSOR_ATTR_LAST_VISIT_TIMESTAMP: last_visit_timestamp,
-        }
-
-    @property
-    def state(self) -> int:
-        """Return the state of the sensor (total visits)."""
-        return len(self._get_visits_data())
+        """Return True if entity is available."""
+        return self.coordinator.last_update_success and self.coordinator.data is not None

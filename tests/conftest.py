@@ -8,11 +8,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import ClientSession
 
+from homeassistant.core import HomeAssistant
+
 from custom_components.lifetime_fitness.api import Api
 from custom_components.lifetime_fitness.const import (
     CONF_PASSWORD,
     CONF_USERNAME,
     DOMAIN,
+)
+from custom_components.lifetime_fitness.coordinator import (
+    LifetimeFitnessCoordinator,
+    LifetimeFitnessData,
 )
 
 pytest_plugins = "pytest_homeassistant_custom_component"
@@ -21,6 +27,7 @@ pytest_plugins = "pytest_homeassistant_custom_component"
 # Test credentials
 TEST_USERNAME = "testuser@example.com"
 TEST_PASSWORD = "testpassword123"
+TEST_ENTRY_ID = "test_entry_id_12345"
 
 
 # Sample API responses
@@ -66,11 +73,11 @@ MOCK_PROFILE_RESPONSE = {
     }
 }
 
-MOCK_VISITS_RESPONSE_EMPTY = {
+MOCK_VISITS_RESPONSE_EMPTY: dict[str, Any] = {
     "data": [],
 }
 
-MOCK_VISITS_RESPONSE_WITH_DATA = {
+MOCK_VISITS_RESPONSE_WITH_DATA: dict[str, Any] = {
     "data": [
         {"usageDateTime": 1701388800000},  # Dec 1, 2023
         {"usageDateTime": 1701475200000},  # Dec 2, 2023
@@ -116,3 +123,37 @@ def mock_api_authenticated(mock_api: Api) -> Api:
     mock_api.result_json = MOCK_VISITS_RESPONSE_WITH_DATA.copy()
     mock_api.update_successful = True
     return mock_api
+
+
+@pytest.fixture
+def mock_coordinator_data() -> LifetimeFitnessData:
+    """Return mock coordinator data."""
+    return LifetimeFitnessData(
+        total_visits=10,
+        visits_this_year=8,
+        visits_this_month=3,
+        visits_this_week=2,
+        last_visit_timestamp=1701561600.0,
+        raw_visits=[
+            {"usageDateTime": 1701388800000},
+            {"usageDateTime": 1701475200000},
+            {"usageDateTime": 1701561600000},
+        ],
+    )
+
+
+@pytest.fixture
+def mock_coordinator(
+    hass: HomeAssistant,
+    mock_api_authenticated: Api,
+    mock_coordinator_data: LifetimeFitnessData,
+) -> LifetimeFitnessCoordinator:
+    """Return a mock coordinator with data."""
+    coordinator = LifetimeFitnessCoordinator(
+        hass,
+        mock_api_authenticated,
+        start_of_week_day=0,
+    )
+    coordinator.data = mock_coordinator_data
+    coordinator.last_update_success = True
+    return coordinator
