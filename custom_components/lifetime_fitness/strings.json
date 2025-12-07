@@ -6,29 +6,51 @@
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]"
         },
-        "description": "API Authentication",
+        "description": "Enter your Life Time Fitness account credentials.",
         "title": "Life Time Fitness"
       }
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "password_needs_to_be_changed": "[%key:common::config_flow::error::password_needs_to_be_changed%]",
-      "too_many_authentication_attempts": "[%key:common::config_flow::error::too_many_authentication_attempts%]",
-      "activation_required": "[%key:common::config_flow::error::activation_required%]",
-      "duplicate_email": "[%key:common::config_flow::error::duplicate_email%]",
+      "password_needs_to_be_changed": "Your password needs to be changed. Please update it on the Life Time website.",
+      "too_many_authentication_attempts": "Too many authentication attempts. Please try again later.",
+      "activation_required": "Account activation is required. Please check your email.",
+      "duplicate_email": "Multiple accounts are associated with this email address.",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
-      "unknown_auth_error": "[%key:common::config_flow::error::unknown_auth_error%]",
+      "unknown_auth_error": "An unknown authentication error occurred.",
       "unknown": "[%key:common::config_flow::error::unknown%]"
+    },
+    "abort": {
+      "already_configured": "[%key:common::config_flow::abort::already_configured_account%]"
     }
   },
   "options": {
     "step": {
       "init": {
         "data": {
-          "start_of_week_day": "First Day of the Week"
+          "start_of_week_day": "First day of the week"
         },
-        "description": "Integration Configuration",
-        "title": "Life Time Fitness"
+        "description": "Configure your Life Time Fitness integration settings.",
+        "title": "Life Time Fitness Options"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "total_visits": {
+        "name": "Total visits"
+      },
+      "visits_this_year": {
+        "name": "Visits this year"
+      },
+      "visits_this_month": {
+        "name": "Visits this month"
+      },
+      "visits_this_week": {
+        "name": "Visits this week"
+      },
+      "last_visit": {
+        "name": "Last visit"
       }
     }
   }

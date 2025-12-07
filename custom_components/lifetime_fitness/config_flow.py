@@ -12,15 +12,24 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
+from .api import (
+    Api,
+    ApiActivationRequired,
+    ApiCannotConnect,
+    ApiDuplicateEmail,
+    ApiInvalidAuth,
+    ApiPasswordNeedsToBeChanged,
+    ApiTooManyAuthenticationAttempts,
+    ApiUnknownAuthError,
+)
 from .const import (
-    DOMAIN,
-    CONF_USERNAME,
+    CONF_DEFAULT_START_OF_WEEK_DAY,
     CONF_PASSWORD,
     CONF_START_OF_WEEK_DAY,
     CONF_START_OF_WEEK_DAY_VALUES,
-    CONF_DEFAULT_START_OF_WEEK_DAY,
+    CONF_USERNAME,
+    DOMAIN,
 )
-from .api import Api, ApiCannotConnect, ApiInvalidAuth
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,20 +51,34 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     try:
         await api_client.authenticate()
-    except ApiCannotConnect:
-        raise CannotConnect
-    except ApiInvalidAuth:
-        raise InvalidAuth
+    except ApiCannotConnect as err:
+        raise CannotConnect from err
+    except ApiInvalidAuth as err:
+        raise InvalidAuth from err
+    except ApiPasswordNeedsToBeChanged as err:
+        raise PasswordNeedsToBeChanged from err
+    except ApiTooManyAuthenticationAttempts as err:
+        raise TooManyAuthenticationAttempts from err
+    except ApiActivationRequired as err:
+        raise ActivationRequired from err
+    except ApiDuplicateEmail as err:
+        raise DuplicateEmail from err
+    except ApiUnknownAuthError as err:
+        raise UnknownAuthError from err
 
     return {"title": f"Life Time: {username}"}
 
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
-    def __init__(self, config_entry):
+    """Handle options flow for Life Time Fitness."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
         self.config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -91,7 +114,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         errors = {}
 
-        # noinspection PyBroadException
         try:
             info = await validate_input(self.hass, user_input)
         except CannotConnect:
@@ -120,7 +142,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> OptionsFlowHandler:
+        """Return the options flow handler."""
         return OptionsFlowHandler(config_entry)
 
 

@@ -2,13 +2,16 @@
     "config": {
         "error": {
             "cannot_connect": "Failed to connect",
-            "password_needs_to_be_changed": "Password needs to be changed",
-            "too_many_authentication_attempts": "Too many attempts, your account has been locked",
-            "activation_required": "Account activation via email required",
-            "duplicate_email": "Your email is associated with more than one account. Please login with your username or member #",
-            "invalid_auth": "Invalid authentication",
-            "unknown_auth_error": "Unexpected error status received from API. Check Home Assistant logs for more details and contact the developer",
+            "password_needs_to_be_changed": "Your password needs to be changed. Please update it on the Life Time website.",
+            "too_many_authentication_attempts": "Too many authentication attempts. Please try again later.",
+            "activation_required": "Account activation is required. Please check your email.",
+            "duplicate_email": "Multiple accounts are associated with this email address. Please login with your username or member number.",
+            "invalid_auth": "Invalid username or password",
+            "unknown_auth_error": "An unknown authentication error occurred. Check Home Assistant logs for details.",
             "unknown": "Unexpected error"
+        },
+        "abort": {
+            "already_configured": "This account is already configured"
         },
         "step": {
             "user": {
@@ -16,7 +19,7 @@
                     "password": "Password",
                     "username": "Username"
                 },
-                "description": "API Authentication",
+                "description": "Enter your Life Time Fitness account credentials.",
                 "title": "Life Time Fitness"
             }
         }
@@ -25,10 +28,29 @@
         "step": {
             "init": {
                 "data": {
-                    "start_of_week_day": "First Day of the Week"
+                    "start_of_week_day": "First day of the week"
                 },
-                "description": "Integration Configuration",
-                "title": "Life Time Fitness"
+                "description": "Configure your Life Time Fitness integration settings.",
+                "title": "Life Time Fitness Options"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "total_visits": {
+                "name": "Total visits"
+            },
+            "visits_this_year": {
+                "name": "Visits this year"
+            },
+            "visits_this_month": {
+                "name": "Visits this month"
+            },
+            "visits_this_week": {
+                "name": "Visits this week"
+            },
+            "last_visit": {
+                "name": "Last visit"
             }
         }
     }
