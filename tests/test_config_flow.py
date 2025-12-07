@@ -1,32 +1,28 @@
 """Tests for the Life Time Fitness config flow."""
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import AsyncMock, patch
-
-import pytest
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 
-from custom_components.lifetime_fitness.const import (
-    CONF_PASSWORD,
-    CONF_USERNAME,
-    CONF_START_OF_WEEK_DAY,
-    DOMAIN,
-)
 from custom_components.lifetime_fitness.api import (
+    ApiActivationRequired,
     ApiCannotConnect,
+    ApiDuplicateEmail,
     ApiInvalidAuth,
     ApiPasswordNeedsToBeChanged,
     ApiTooManyAuthenticationAttempts,
-    ApiActivationRequired,
-    ApiDuplicateEmail,
     ApiUnknownAuthError,
 )
+from custom_components.lifetime_fitness.const import (
+    CONF_PASSWORD,
+    CONF_USERNAME,
+    DOMAIN,
+)
 
-from .conftest import TEST_USERNAME, TEST_PASSWORD
+from .conftest import TEST_PASSWORD, TEST_USERNAME
 
 
 async def test_form_user_step(hass: HomeAssistant) -> None:

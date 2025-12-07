@@ -1,8 +1,6 @@
 """Tests for the Life Time Fitness data models."""
 from __future__ import annotations
 
-import pytest
-
 from custom_components.lifetime_fitness.model import LifetimeAuthentication
 
 

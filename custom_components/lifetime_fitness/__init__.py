@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -26,7 +25,7 @@ from .const import (
     CONF_PASSWORD,
     CONF_START_OF_WEEK_DAY,
     CONF_USERNAME,
-    DOMAIN,
+    DOMAIN as DOMAIN,
     ISSUE_URL,
     VERSION,
 )
@@ -38,7 +37,7 @@ PLATFORMS: list[Platform] = [
 
 _LOGGER = logging.getLogger(__name__)
 
-LifetimeFitnessConfigEntry: TypeAlias = ConfigEntry[LifetimeFitnessCoordinator]
+type LifetimeFitnessConfigEntry = ConfigEntry[LifetimeFitnessCoordinator]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: LifetimeFitnessConfigEntry) -> bool:

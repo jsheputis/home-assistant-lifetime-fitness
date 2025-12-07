@@ -1,8 +1,7 @@
 """Tests for the Life Time Fitness coordinator."""
 from __future__ import annotations
 
-from datetime import date, timedelta
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.core import HomeAssistant

@@ -125,9 +125,9 @@ class LifetimeFitnessSensor(
             self.entity_description.device_class == SensorDeviceClass.TIMESTAMP
             and value is not None
         ):
-            from datetime import datetime, timezone
+            from datetime import UTC, datetime
 
-            return datetime.fromtimestamp(value, tz=timezone.utc)
+            return datetime.fromtimestamp(value, tz=UTC)
 
         return value
 

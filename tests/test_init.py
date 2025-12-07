@@ -1,15 +1,10 @@
 """Tests for the Life Time Fitness integration setup."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 
 from custom_components.lifetime_fitness.const import DOMAIN
-
-from .conftest import TEST_USERNAME, TEST_PASSWORD
 
 
 async def test_async_setup(hass: HomeAssistant) -> None:

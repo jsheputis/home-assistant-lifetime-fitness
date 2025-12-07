@@ -1,13 +1,10 @@
 """Tests for the Life Time Fitness sensor platform."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock
+from datetime import UTC, datetime
 
-import pytest
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
 
 from custom_components.lifetime_fitness.coordinator import (
     LifetimeFitnessCoordinator,
@@ -157,9 +154,9 @@ class TestLifetimeFitnessSensor:
 
         value = sensor.native_value
         assert isinstance(value, datetime)
-        assert value.tzinfo == timezone.utc
+        assert value.tzinfo == UTC
         # 1701561600.0 = Dec 3, 2023 00:00:00 UTC
-        assert value == datetime(2023, 12, 3, 0, 0, 0, tzinfo=timezone.utc)
+        assert value == datetime(2023, 12, 3, 0, 0, 0, tzinfo=UTC)
 
     def test_native_value_when_no_data(
         self, mock_coordinator: LifetimeFitnessCoordinator
