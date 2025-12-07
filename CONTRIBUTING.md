@@ -213,7 +213,7 @@ def my_function(param: str) -> str:
 
 ## Project Structure
 
-```
+```text
 home-assistant-lifetime-fitness/
 ├── custom_components/
 │   └── lifetime_fitness/

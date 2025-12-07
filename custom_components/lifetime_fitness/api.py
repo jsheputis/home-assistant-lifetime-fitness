@@ -126,20 +126,60 @@ class Api:
     async def _fetch_member_id(self) -> None:
         """Fetch the member ID from the profile endpoint."""
         if self._lifetime_authentication is None:
-            raise ApiAuthRequired
+            raise ApiAuthRequired("Authentication data is missing")
 
-        async with self._client_session.get(
-            API_PROFILE_ENDPOINT,
-            headers={
-                API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
-                "Authorization": self._lifetime_authentication.access_token,
-                "Content-Type": "application/json",
-                "User-Agent": USER_AGENT,
-                "Accept": "*/*",
-            },
-        ) as profile_response:
-            profile_response_json = await profile_response.json()
-            self._member_id = profile_response_json["memberDetails"]["memberId"]
+        access_token = self._lifetime_authentication.access_token
+        if access_token is None:
+            raise ApiAuthRequired("Access token is missing")
+
+        try:
+            async with self._client_session.get(
+                API_PROFILE_ENDPOINT,
+                headers={
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                    "User-Agent": USER_AGENT,
+                    "Accept": "*/*",
+                },
+            ) as profile_response:
+                if profile_response.status == HTTPStatus.UNAUTHORIZED:
+                    _LOGGER.error("Unauthorized when fetching profile (status 401)")
+                    raise ApiInvalidAuth("Profile request returned unauthorized")
+
+                if not profile_response.ok:
+                    _LOGGER.error(
+                        "Failed to fetch profile, status: %d", profile_response.status
+                    )
+                    raise ApiProfileError(
+                        f"Profile request failed with status {profile_response.status}"
+                    )
+
+                try:
+                    profile_response_json = await profile_response.json()
+                except (ValueError, TypeError) as err:
+                    _LOGGER.error("Failed to parse profile response as JSON: %s", err)
+                    raise ApiProfileError("Invalid JSON in profile response") from err
+
+                member_details = profile_response_json.get("memberDetails")
+                if member_details is None:
+                    _LOGGER.error(
+                        "Profile response missing memberDetails: %s", profile_response_json
+                    )
+                    raise ApiProfileError("Profile response missing memberDetails")
+
+                member_id = member_details.get("memberId")
+                if member_id is None:
+                    _LOGGER.error(
+                        "Profile response missing memberId: %s", profile_response_json
+                    )
+                    raise ApiProfileError("Profile response missing memberId")
+
+                self._member_id = member_id
+
+        except ClientConnectionError as err:
+            _LOGGER.exception("Connection error while fetching profile")
+            raise ApiCannotConnect from err
 
     async def _get_visits_between_dates(
         self, start_date: date, end_date: date
@@ -191,6 +231,8 @@ class Api:
                 self.result_json = await self._get_visits_between_dates(
                     first_day_of_the_year, today
                 )
+            # Update succeeded - clear any previous failure state
+            self.update_successful = True
         except ClientError:
             self.update_successful = False
             _LOGGER.exception("Unexpected exception during Life Time API update")
@@ -229,4 +271,8 @@ class ApiAuthRequired(Exception):
 
 
 class ApiAuthExpired(Exception):
-    """Authentication has expired"""
+    """Authentication has expired."""
+
+
+class ApiProfileError(Exception):
+    """Error fetching or parsing profile data."""
