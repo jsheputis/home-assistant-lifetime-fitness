@@ -19,11 +19,9 @@ This integration uses [Life Time Fitness](https://www.lifetime.life)'s API to fe
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 
-1. Open HACS Settings and add this repository (https://github.com/jsheputis/home-assistant-lifetime-fitness/)
-   as a Custom Repository (use **Integration** as the category).
-2. The `Life Time Fitness` page should automatically load (or find it in the HACS Store)
-3. Click `Download`
-4. Continue to [Configuration](#configuration)
+1. Open HACS and search for `Life Time Fitness`
+1. Click `Download`
+1. Continue to [Setup](README.md#Setup)
 
 ## 2. Manual Installation
 
