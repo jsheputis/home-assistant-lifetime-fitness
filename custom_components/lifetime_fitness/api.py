@@ -10,14 +10,13 @@ from typing import Any
 from aiohttp import ClientConnectionError, ClientError, ClientResponseError, ClientSession
 from fake_useragent import UserAgent
 
+from .api_keys import ApiKeyFetchError, ApiKeys, fetch_api_keys
 from .const import (
     API_AUTH_API_KEY_HEADER,
     API_AUTH_ENDPOINT,
-    API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
     API_AUTH_REQUEST_PASSWORD_JSON_KEY,
     API_AUTH_REQUEST_USERNAME_JSON_KEY,
     API_AUTH_SUBSCRIPTION_KEY_HEADER,
-    API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
     API_CLUB_VISITS_AUTH_HEADER,
     API_CLUB_VISITS_ENDPOINT_DATE_FORMAT,
     API_CLUB_VISITS_ENDPOINT_FORMATSTRING,
@@ -88,6 +87,7 @@ class Api:
 
         self._lifetime_authentication: LifetimeAuthentication | None = None
         self._member_id: str | None = None
+        self._api_keys: ApiKeys | None = None
 
         self.update_successful: bool = True
         self.result_json: dict[str, Any] | None = None
@@ -96,9 +96,21 @@ class Api:
         """Return the username."""
         return self._username
 
+    async def _ensure_api_keys(self) -> ApiKeys:
+        """Ensure API keys are fetched and cached."""
+        if self._api_keys is None:
+            try:
+                self._api_keys = await fetch_api_keys(self._client_session)
+            except ApiKeyFetchError as err:
+                _LOGGER.error("Failed to fetch API keys: %s", err)
+                raise ApiCannotConnect(f"Failed to fetch API keys: {err}") from err
+        return self._api_keys
+
     async def authenticate(self) -> None:
         """Authenticate with the Life Time Fitness API."""
         try:
+            api_keys = await self._ensure_api_keys()
+
             async with self._client_session.post(
                 API_AUTH_ENDPOINT,
                 json={
@@ -106,7 +118,7 @@ class Api:
                     API_AUTH_REQUEST_PASSWORD_JSON_KEY: self._password,
                 },
                 headers={
-                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: api_keys.apim_subscription_key,
                     "Content-Type": "application/json",
                     "User-Agent": USER_AGENT,
                     "Accept": "*/*",
@@ -135,11 +147,13 @@ class Api:
         if access_token is None:
             raise ApiAuthRequired("Access token is missing")
 
+        api_keys = await self._ensure_api_keys()
+
         try:
             async with self._client_session.get(
                 API_PROFILE_ENDPOINT,
                 headers={
-                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: api_keys.apim_subscription_key,
                     "Authorization": f"Bearer {access_token}",
                     "Content-Type": "application/json",
                     "User-Agent": USER_AGENT,
@@ -185,6 +199,8 @@ class Api:
         if self._lifetime_authentication is None or self._lifetime_authentication.sso_id is None:
             raise ApiAuthRequired
 
+        api_keys = await self._ensure_api_keys()
+
         try:
             async with self._client_session.get(
                 API_CLUB_VISITS_ENDPOINT_FORMATSTRING.format(
@@ -194,8 +210,8 @@ class Api:
                 ),
                 headers={
                     API_CLUB_VISITS_AUTH_HEADER: self._lifetime_authentication.sso_id,
-                    API_AUTH_SUBSCRIPTION_KEY_HEADER: API_AUTH_SUBSCRIPTION_KEY_HEADER_VALUE,
-                    API_AUTH_API_KEY_HEADER: API_AUTH_LT_MY_ACCOUNT_KEY_HEADER_VALUE,
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: api_keys.apim_subscription_key,
+                    API_AUTH_API_KEY_HEADER: api_keys.my_account_api_key,
                     "Content-Type": "application/json",
                     "User-Agent": USER_AGENT,
                     "Accept": "*/*",
