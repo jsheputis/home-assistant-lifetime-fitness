@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aiohttp import ClientConnectionError
@@ -19,6 +19,7 @@ from custom_components.lifetime_fitness.api import (
     ApiUnknownAuthError,
     handle_authentication_response_json,
 )
+from custom_components.lifetime_fitness.api_keys import ApiKeys
 from custom_components.lifetime_fitness.model import LifetimeAuthentication
 
 from .conftest import (
@@ -33,6 +34,12 @@ from .conftest import (
     MOCK_VISITS_RESPONSE_WITH_DATA,
     TEST_PASSWORD,
     TEST_USERNAME,
+)
+
+# Mock API keys for testing
+MOCK_API_KEYS = ApiKeys(
+    apim_subscription_key="test_apim_key_12345",
+    my_account_api_key="test_my_account_key_67890",
 )
 
 
@@ -98,14 +105,20 @@ class TestApiClient:
         assert api.update_successful is True
         assert api.result_json is None
 
-    async def test_authenticate_success(self, mock_client_session: MagicMock) -> None:
+    @patch("custom_components.lifetime_fitness.api.fetch_api_keys")
+    async def test_authenticate_success(
+        self, mock_fetch_keys: AsyncMock, mock_client_session: MagicMock
+    ) -> None:
         """Test successful authentication."""
+        mock_fetch_keys.return_value = MOCK_API_KEYS
         api = Api(mock_client_session, TEST_USERNAME, TEST_PASSWORD)
 
         mock_auth_response = AsyncMock()
         mock_auth_response.json = AsyncMock(return_value=MOCK_AUTH_RESPONSE_SUCCESS)
 
         mock_profile_response = AsyncMock()
+        mock_profile_response.ok = True
+        mock_profile_response.status = 200
         mock_profile_response.json = AsyncMock(return_value=MOCK_PROFILE_RESPONSE)
 
         mock_client_session.post = MagicMock(
@@ -120,8 +133,12 @@ class TestApiClient:
         assert api._lifetime_authentication is not None
         assert api._member_id == "12345678"
 
-    async def test_authenticate_invalid_auth(self, mock_client_session: MagicMock) -> None:
+    @patch("custom_components.lifetime_fitness.api.fetch_api_keys")
+    async def test_authenticate_invalid_auth(
+        self, mock_fetch_keys: AsyncMock, mock_client_session: MagicMock
+    ) -> None:
         """Test authentication with invalid credentials."""
+        mock_fetch_keys.return_value = MOCK_API_KEYS
         api = Api(mock_client_session, TEST_USERNAME, TEST_PASSWORD)
 
         mock_response = AsyncMock()
@@ -134,8 +151,12 @@ class TestApiClient:
         with pytest.raises(ApiInvalidAuth):
             await api.authenticate()
 
-    async def test_authenticate_connection_error(self, mock_client_session: MagicMock) -> None:
+    @patch("custom_components.lifetime_fitness.api.fetch_api_keys")
+    async def test_authenticate_connection_error(
+        self, mock_fetch_keys: AsyncMock, mock_client_session: MagicMock
+    ) -> None:
         """Test authentication with connection error."""
+        mock_fetch_keys.return_value = MOCK_API_KEYS
         api = Api(mock_client_session, TEST_USERNAME, TEST_PASSWORD)
 
         mock_client_session.post = MagicMock(side_effect=ClientConnectionError())
@@ -151,8 +172,12 @@ class TestApiClient:
         with pytest.raises(ApiAuthRequired):
             await mock_api._get_visits_between_dates(start_date=MagicMock(), end_date=MagicMock())
 
-    async def test_update_visits_success(self, mock_api_authenticated: Api) -> None:
+    @patch("custom_components.lifetime_fitness.api.fetch_api_keys")
+    async def test_update_visits_success(
+        self, mock_fetch_keys: AsyncMock, mock_api_authenticated: Api
+    ) -> None:
         """Test successful visits update."""
+        mock_fetch_keys.return_value = MOCK_API_KEYS
         mock_response = AsyncMock()
         mock_response.json = AsyncMock(return_value=MOCK_VISITS_RESPONSE_WITH_DATA)
 
@@ -164,8 +189,12 @@ class TestApiClient:
 
         assert mock_api_authenticated.result_json == MOCK_VISITS_RESPONSE_WITH_DATA
 
-    async def test_update_visits_empty(self, mock_api_authenticated: Api) -> None:
+    @patch("custom_components.lifetime_fitness.api.fetch_api_keys")
+    async def test_update_visits_empty(
+        self, mock_fetch_keys: AsyncMock, mock_api_authenticated: Api
+    ) -> None:
         """Test visits update with empty response."""
+        mock_fetch_keys.return_value = MOCK_API_KEYS
         mock_response = AsyncMock()
         mock_response.json = AsyncMock(return_value=MOCK_VISITS_RESPONSE_EMPTY)
 

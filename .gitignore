@@ -3,7 +3,13 @@
 .vscode/
 .idea/
 venv/
+venv*/
 personal/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
 
 # Unit test / coverage reports
 htmlcov/
