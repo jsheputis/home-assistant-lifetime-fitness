@@ -10,6 +10,7 @@ This integration uses [Life Time Fitness](https://www.lifetime.life)'s API to fe
 - Track total gym visits (year-to-date)
 - Monitor visits this year, month, and week
 - View last visit timestamp
+- **View upcoming reservations** (classes, personal training, etc.) on a calendar
 - Support for multiple accounts
 - Configurable week start day
 
@@ -41,6 +42,8 @@ After a correct installation, the configuration directory should look like the f
     └── lifetime_fitness
         └── __init__.py
         └── api.py
+        └── api_keys.py
+        └── calendar.py
         └── config_flow.py
         └── const.py
         └── coordinator.py
@@ -84,6 +87,25 @@ Each configured account creates a **device** named "Life Time Fitness (username)
 
 All visit count sensors support Home Assistant's long-term statistics, allowing you to track trends over time.
 
+## Calendar
+
+Each configured account also creates a **calendar entity** for viewing upcoming reservations:
+
+| Calendar | Entity ID | Description |
+|----------|-----------|-------------|
+| **Reservations** | `calendar.life_time_fitness_<username>_reservations` | Upcoming reservations (next 30 days) |
+
+### Calendar Event Details
+
+Each reservation appears as a calendar event with:
+
+- **Summary** - Event name (e.g., "PT Private", "Yoga Class")
+- **Location** - Full location (e.g., "Fitness Floor, Warrenville")
+- **Description** - Reservation type, instructor name, and club name
+- **Start/End times** - Scheduled time slot
+
+The calendar integrates with Home Assistant's calendar dashboard and can be used in automations.
+
 ## Example Automations
 
 ### Notify if you haven't been to the gym this week
@@ -120,6 +142,31 @@ entities:
     name: This Week
   - entity: sensor.life_time_fitness_myemail_last_visit
     name: Last Visit
+```
+
+### Remind about upcoming class
+
+```yaml
+automation:
+  - alias: "Class Reminder"
+    trigger:
+      - platform: calendar
+        event: start
+        entity_id: calendar.life_time_fitness_myemail_reservations
+        offset: "-01:00:00"
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Upcoming Class"
+          message: "{{ trigger.calendar_event.summary }} starts in 1 hour at {{ trigger.calendar_event.location }}"
+```
+
+### Display reservations calendar on dashboard
+
+```yaml
+type: calendar
+entities:
+  - calendar.life_time_fitness_myemail_reservations
 ```
 
 # Upgrading from v1.x
