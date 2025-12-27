@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0] - Unreleased
+## [2.1.0]
 
 ### Added
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reservations API integration** - Fetches member reservations from the Life Time scheduling API (`/ux/web-schedules/v3/reservations`)
 - **New calendar module** (`calendar.py`) - Calendar entity for displaying reservations
 
-## [2.0.0] - Unreleased
+## [2.0.0]
 
 ### ⚠️ Breaking Changes
 
