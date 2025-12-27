@@ -1,6 +1,4 @@
 {
     "name": "Life Time Fitness",
-    "country": ["US", "CA"],
-    "zip_release": true,
-    "filename": "lifetime_fitness.zip"
+    "country": ["US", "CA"]
 }

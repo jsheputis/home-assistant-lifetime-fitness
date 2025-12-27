@@ -5,7 +5,7 @@ from __future__ import annotations
 import enum
 
 DOMAIN = "lifetime_fitness"
-VERSION = "0.0.0-dev"  # Updated by release workflow
+VERSION = "2.1.1"
 ISSUE_URL = "https://github.com/jsheputis/home-assistant-lifetime-fitness"
 
 # Configuration keys
