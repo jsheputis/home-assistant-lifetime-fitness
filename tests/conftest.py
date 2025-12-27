@@ -138,6 +138,7 @@ def mock_coordinator_data() -> LifetimeFitnessData:
             {"usageDateTime": 1701475200000},
             {"usageDateTime": 1701561600000},
         ],
+        reservations=[],
     )
 
 
