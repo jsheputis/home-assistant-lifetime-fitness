@@ -37,6 +37,7 @@ class LifetimeFitnessData:
     visits_this_week: int
     last_visit_timestamp: float | None
     raw_visits: list[dict[str, Any]]
+    reservations: list[dict[str, Any]]
 
 
 class LifetimeFitnessCoordinator(DataUpdateCoordinator[LifetimeFitnessData]):
@@ -80,6 +81,7 @@ class LifetimeFitnessCoordinator(DataUpdateCoordinator[LifetimeFitnessData]):
     def _process_visits_data(self) -> LifetimeFitnessData:
         """Process raw visit data into structured format."""
         visits = self._get_visits_list()
+        reservations = self._get_reservations_list()
 
         if not visits:
             return LifetimeFitnessData(
@@ -89,6 +91,7 @@ class LifetimeFitnessCoordinator(DataUpdateCoordinator[LifetimeFitnessData]):
                 visits_this_week=0,
                 last_visit_timestamp=None,
                 raw_visits=[],
+                reservations=reservations,
             )
 
         today = date.today()
@@ -131,6 +134,7 @@ class LifetimeFitnessCoordinator(DataUpdateCoordinator[LifetimeFitnessData]):
             visits_this_week=visits_this_week,
             last_visit_timestamp=last_visit_timestamp,
             raw_visits=visits,
+            reservations=reservations,
         )
 
     def _get_visits_list(self) -> list[dict[str, Any]]:
@@ -141,6 +145,15 @@ class LifetimeFitnessCoordinator(DataUpdateCoordinator[LifetimeFitnessData]):
         if data is None:
             return []
         return data
+
+    def _get_reservations_list(self) -> list[dict[str, Any]]:
+        """Safely get reservations data from the API response."""
+        if self.api_client.reservations_json is None:
+            return []
+        results = self.api_client.reservations_json.get("results")
+        if results is None:
+            return []
+        return results
 
     def update_start_of_week_day(self, start_of_week_day: int) -> None:
         """Update the start of week day setting."""

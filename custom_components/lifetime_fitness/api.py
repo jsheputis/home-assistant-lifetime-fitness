@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from http import HTTPStatus
 from typing import Any
 
@@ -21,6 +21,9 @@ from .const import (
     API_CLUB_VISITS_ENDPOINT_DATE_FORMAT,
     API_CLUB_VISITS_ENDPOINT_FORMATSTRING,
     API_PROFILE_ENDPOINT,
+    API_RESERVATIONS_DATE_FORMAT,
+    API_RESERVATIONS_ENDPOINT,
+    API_RESERVATIONS_SSO_HEADER,
     AUTHENTICATION_RESPONSE_MESSAGES,
     AUTHENTICATION_RESPONSE_STATUSES,
     AuthenticationResults,
@@ -91,6 +94,7 @@ class Api:
 
         self.update_successful: bool = True
         self.result_json: dict[str, Any] | None = None
+        self.reservations_json: dict[str, Any] | None = None
 
     def get_username(self) -> str:
         """Return the username."""
@@ -229,6 +233,7 @@ class Api:
     async def update(self) -> None:
         """Update all data from the API."""
         await self.update_visits()
+        await self.update_reservations()
 
     async def update_visits(self) -> None:
         """Fetch the latest visit data."""
@@ -257,6 +262,59 @@ class Api:
         except Exception:
             self.update_successful = False
             _LOGGER.exception("Unexpected exception during Life Time API update")
+            raise
+
+    async def _get_reservations(self, start_date: date, end_date: date) -> dict[str, Any]:
+        """Get reservation data between two dates."""
+        if self._lifetime_authentication is None or self._lifetime_authentication.sso_id is None:
+            raise ApiAuthRequired
+
+        api_keys = await self._ensure_api_keys()
+
+        try:
+            async with self._client_session.get(
+                API_RESERVATIONS_ENDPOINT,
+                params={
+                    "memberIds": self._member_id,
+                    "start": start_date.strftime(API_RESERVATIONS_DATE_FORMAT),
+                    "end": end_date.strftime(API_RESERVATIONS_DATE_FORMAT),
+                    "groupCamps": "true",
+                    "pageSize": "0",
+                },
+                headers={
+                    API_AUTH_SUBSCRIPTION_KEY_HEADER: api_keys.apim_subscription_key,
+                    API_RESERVATIONS_SSO_HEADER: self._lifetime_authentication.sso_id,
+                    "Accept": "application/json",
+                    "User-Agent": USER_AGENT,
+                },
+            ) as response:
+                if response.status == HTTPStatus.UNAUTHORIZED:
+                    raise ApiAuthExpired
+                return await response.json()
+        except ClientResponseError as err:
+            if err.status == HTTPStatus.UNAUTHORIZED:
+                raise ApiAuthExpired from err
+            raise
+        except ClientConnectionError as err:
+            _LOGGER.exception("Connection error while fetching reservations")
+            raise ApiCannotConnect from err
+
+    async def update_reservations(self) -> None:
+        """Fetch upcoming reservations."""
+        today = date.today()
+        # Fetch reservations for the next 30 days
+        end_date = today + timedelta(days=30)
+        try:
+            try:
+                self.reservations_json = await self._get_reservations(today, end_date)
+            except ApiAuthExpired:
+                await self.authenticate()
+                self.reservations_json = await self._get_reservations(today, end_date)
+        except (ApiCannotConnect, ApiAuthRequired) as err:
+            _LOGGER.error("API error during reservations update: %s", err)
+            raise
+        except ClientError:
+            _LOGGER.exception("Unexpected client error during reservations update")
             raise
 
 

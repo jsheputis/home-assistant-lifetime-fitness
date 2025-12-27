@@ -213,6 +213,7 @@ class TestLifetimeFitnessSensor:
             visits_this_week=0,
             last_visit_timestamp=None,
             raw_visits=[],
+            reservations=[],
         )
         description = next(d for d in SENSOR_DESCRIPTIONS if d.key == "last_visit")
         sensor = LifetimeFitnessSensor(

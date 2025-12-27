@@ -44,6 +44,11 @@ API_CLUB_VISITS_ENDPOINT_DATE_FORMAT = "%Y-%m-%d"
 API_CLUB_VISITS_AUTH_HEADER = "X-LTF-SSOID"
 API_CLUB_VISITS_TIMESTAMP_JSON_KEY = "usageDateTime"
 
+# Reservations API
+API_RESERVATIONS_ENDPOINT = "https://api.lifetimefitness.com/ux/web-schedules/v3/reservations"
+API_RESERVATIONS_DATE_FORMAT = "%m/%d/%Y"
+API_RESERVATIONS_SSO_HEADER = "x-ltf-ssoid"
+
 
 class AuthenticationResults(enum.Enum):
     SUCCESS = 0

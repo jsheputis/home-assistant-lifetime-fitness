@@ -33,6 +33,7 @@ from .const import (
 from .coordinator import LifetimeFitnessCoordinator
 
 PLATFORMS: list[Platform] = [
+    Platform.CALENDAR,
     Platform.SENSOR,
 ]
 
