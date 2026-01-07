@@ -16,18 +16,19 @@ from custom_components.lifetime_fitness.coordinator import (
 from .conftest import TEST_ENTRY_ID, TEST_USERNAME
 
 # Sample reservation data for testing
+# Using dates far in the future to ensure tests remain valid over time
 MOCK_RESERVATION = {
     "id": "ZXhlcnA6NTJwMTUyODMzOjUyYm9vazYyMzk4Ng==",
     "memberId": 114937419,
     "memberName": "James",
-    "eventId": "ZXhlcnA6NTJib29rNjIzOTg2OjIwMjYtMDEtMDY=",
+    "eventId": "ZXhlcnA6NTJib29rNjIzOTg2OjIwOTktMDEtMDY=",
     "eventName": "PT Private",
     "location": "Fitness Floor, Warrenville",
     "locationName": "Warrenville",
     "clubId": 52,
     "instructors": [{"name": "Zoe W."}],
-    "start": "2026-01-06T08:00:00-06:00",
-    "end": "2026-01-06T09:00:00-06:00",
+    "start": "2099-01-06T08:00:00-06:00",
+    "end": "2099-01-06T09:00:00-06:00",
     "reservationType": "Personal Training",
     "category": "class",
 }
@@ -36,14 +37,14 @@ MOCK_RESERVATION_SECOND = {
     "id": "ZXhlcnA6NTJwMTUyODMzOjUyYm9vazYyMzk4Nw==",
     "memberId": 114937419,
     "memberName": "James",
-    "eventId": "ZXhlcnA6NTJib29rNjIzOTg3OjIwMjYtMDEtMDg=",
+    "eventId": "ZXhlcnA6NTJib29rNjIzOTg3OjIwOTktMDEtMDg=",
     "eventName": "Yoga Class",
     "location": "Studio A, Warrenville",
     "locationName": "Warrenville",
     "clubId": 52,
     "instructors": [{"name": "John D."}],
-    "start": "2026-01-08T10:00:00-06:00",
-    "end": "2026-01-08T11:00:00-06:00",
+    "start": "2099-01-08T10:00:00-06:00",
+    "end": "2099-01-08T11:00:00-06:00",
     "reservationType": "Group Fitness",
     "category": "class",
 }
@@ -177,9 +178,9 @@ class TestLifetimeFitnessCalendar:
             TEST_ENTRY_ID,
         )
 
-        # Get events for January 2026
-        start = datetime(2026, 1, 1, tzinfo=UTC)
-        end = datetime(2026, 1, 31, tzinfo=UTC)
+        # Get events for January 2099
+        start = datetime(2099, 1, 1, tzinfo=UTC)
+        end = datetime(2099, 1, 31, tzinfo=UTC)
 
         events = await calendar.async_get_events(hass, start, end)
 
@@ -199,9 +200,9 @@ class TestLifetimeFitnessCalendar:
             TEST_ENTRY_ID,
         )
 
-        # Get events only for Jan 6, 2026
-        start = datetime(2026, 1, 6, tzinfo=UTC)
-        end = datetime(2026, 1, 7, tzinfo=UTC)
+        # Get events only for Jan 6, 2099
+        start = datetime(2099, 1, 6, tzinfo=UTC)
+        end = datetime(2099, 1, 7, tzinfo=UTC)
 
         events = await calendar.async_get_events(hass, start, end)
 
@@ -221,8 +222,8 @@ class TestLifetimeFitnessCalendar:
             TEST_ENTRY_ID,
         )
 
-        start = datetime(2026, 1, 1, tzinfo=UTC)
-        end = datetime(2026, 1, 31, tzinfo=UTC)
+        start = datetime(2099, 1, 1, tzinfo=UTC)
+        end = datetime(2099, 1, 31, tzinfo=UTC)
 
         events = await calendar.async_get_events(hass, start, end)
 
@@ -285,8 +286,8 @@ class TestLifetimeFitnessCalendar:
         )
 
         reservation = {
-            "start": "2026-01-06T08:00:00-06:00",
-            "end": "2026-01-06T09:00:00-06:00",
+            "start": "2099-01-06T08:00:00-06:00",
+            "end": "2099-01-06T09:00:00-06:00",
         }
         event = calendar._reservation_to_event(reservation)
 
