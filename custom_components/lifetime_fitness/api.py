@@ -104,7 +104,7 @@ class Api:
         """Ensure API keys are fetched and cached."""
         if self._api_keys is None:
             try:
-                self._api_keys = await fetch_api_keys(self._client_session)
+                self._api_keys = await fetch_api_keys()
             except ApiKeyFetchError as err:
                 _LOGGER.error("Failed to fetch API keys: %s", err)
                 raise ApiCannotConnect(f"Failed to fetch API keys: {err}") from err

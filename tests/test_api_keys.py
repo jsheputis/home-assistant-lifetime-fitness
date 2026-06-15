@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -73,6 +74,32 @@ def mock_html_missing_my_account_key() -> str:
     """
 
 
+def _patch_client_session(response: MagicMock | None = None, *, get_side_effect=None):
+    """Patch aiohttp.ClientSession used inside fetch_api_keys.
+
+    Returns the patcher and the MagicMock standing in for the session, so tests
+    can assert on call counts.
+    """
+    session_mock = MagicMock()
+
+    if get_side_effect is not None:
+        session_mock.get = MagicMock(side_effect=get_side_effect)
+    else:
+        session_mock.get = MagicMock(
+            return_value=AsyncMock(__aenter__=AsyncMock(return_value=response))
+        )
+
+    @asynccontextmanager
+    async def fake_session_ctx(*_args, **_kwargs):
+        yield session_mock
+
+    patcher = patch(
+        "custom_components.lifetime_fitness.api_keys.aiohttp.ClientSession",
+        side_effect=fake_session_ctx,
+    )
+    return patcher, session_mock
+
+
 class TestApiKeyCache:
     """Tests for ApiKeyCache class."""
 
@@ -136,12 +163,9 @@ class TestFetchApiKeys:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_with_keys)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        keys = await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(mock_response)
+        with patcher:
+            keys = await fetch_api_keys()
 
         assert keys.apim_subscription_key == "924c03ce573d473793e184219a6a19bd"
         assert keys.my_account_api_key == "CkXadK3LkNF6sSj4jLGbtBB0amCwdWlv"
@@ -152,20 +176,13 @@ class TestFetchApiKeys:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_with_keys)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        # First call fetches
-        keys1 = await fetch_api_keys(mock_session)
-
-        # Second call should use cache
-        keys2 = await fetch_api_keys(mock_session)
+        patcher, session_mock = _patch_client_session(mock_response)
+        with patcher:
+            keys1 = await fetch_api_keys()
+            keys2 = await fetch_api_keys()
 
         assert keys1.apim_subscription_key == keys2.apim_subscription_key
-        # get() should have been called only once
-        assert mock_session.get.call_count == 1
+        assert session_mock.get.call_count == 1
 
     async def test_fetch_api_keys_force_refresh(self, mock_html_with_keys: str) -> None:
         """Test that force_refresh bypasses cache."""
@@ -173,18 +190,12 @@ class TestFetchApiKeys:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_with_keys)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
+        patcher, session_mock = _patch_client_session(mock_response)
+        with patcher:
+            await fetch_api_keys()
+            await fetch_api_keys(force_refresh=True)
 
-        # First call fetches
-        await fetch_api_keys(mock_session)
-
-        # Second call with force_refresh should fetch again
-        await fetch_api_keys(mock_session, force_refresh=True)
-
-        assert mock_session.get.call_count == 2
+        assert session_mock.get.call_count == 2
 
     async def test_fetch_api_keys_http_error(self) -> None:
         """Test handling of HTTP error response."""
@@ -192,21 +203,15 @@ class TestFetchApiKeys:
         mock_response.ok = False
         mock_response.status = 500
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        with pytest.raises(ApiKeyFetchError, match="HTTP 500"):
-            await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(mock_response)
+        with patcher, pytest.raises(ApiKeyFetchError, match="HTTP 500"):
+            await fetch_api_keys()
 
     async def test_fetch_api_keys_connection_error(self) -> None:
         """Test handling of connection error."""
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(side_effect=ClientError("Connection failed"))
-
-        with pytest.raises(ApiKeyFetchError, match="Connection error"):
-            await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(get_side_effect=ClientError("Connection failed"))
+        with patcher, pytest.raises(ApiKeyFetchError, match="Connection error"):
+            await fetch_api_keys()
 
     async def test_fetch_api_keys_missing_apim_key(self, mock_html_missing_apim_key: str) -> None:
         """Test handling of missing apimKey in response."""
@@ -214,13 +219,9 @@ class TestFetchApiKeys:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_missing_apim_key)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        with pytest.raises(ApiKeyFetchError, match="Could not find apimKey"):
-            await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(mock_response)
+        with patcher, pytest.raises(ApiKeyFetchError, match="Could not find apimKey"):
+            await fetch_api_keys()
 
     async def test_fetch_api_keys_missing_my_account_key(
         self, mock_html_missing_my_account_key: str
@@ -230,13 +231,9 @@ class TestFetchApiKeys:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_missing_my_account_key)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        with pytest.raises(ApiKeyFetchError, match="Could not find ltMyAccountApiKey"):
-            await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(mock_response)
+        with patcher, pytest.raises(ApiKeyFetchError, match="Could not find ltMyAccountApiKey"):
+            await fetch_api_keys()
 
 
 class TestHelperFunctions:
@@ -252,12 +249,9 @@ class TestHelperFunctions:
         mock_response.ok = True
         mock_response.text = AsyncMock(return_value=mock_html_with_keys)
 
-        mock_session = MagicMock()
-        mock_session.get = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(return_value=mock_response))
-        )
-
-        await fetch_api_keys(mock_session)
+        patcher, _ = _patch_client_session(mock_response)
+        with patcher:
+            await fetch_api_keys()
 
         cached = get_cached_keys()
         assert cached is not None

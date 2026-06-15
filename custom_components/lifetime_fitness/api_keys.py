@@ -10,12 +10,9 @@ import logging
 import re
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 
+import aiohttp
 from aiohttp import ClientError
-
-if TYPE_CHECKING:
-    from aiohttp import ClientSession
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,6 +21,10 @@ LIFETIME_CONFIG_URL = "https://my.lifetime.life/"
 
 # Cache duration in seconds (24 hours)
 CACHE_DURATION_SECONDS = 86400
+
+# Lifetime's CSP response header exceeds aiohttp's default 8190-byte limit,
+# so we raise the per-header size cap for this request.
+MAX_HEADER_BYTES = 65536
 
 # Regex patterns to extract keys from window.lt object
 APIM_KEY_PATTERN = re.compile(r'"apimKey"\s*:\s*"([a-f0-9]{32})"')
@@ -74,11 +75,13 @@ class ApiKeyCache:
 _cache = ApiKeyCache()
 
 
-async def fetch_api_keys(client_session: ClientSession, force_refresh: bool = False) -> ApiKeys:
+async def fetch_api_keys(force_refresh: bool = False) -> ApiKeys:
     """Fetch API keys from the Life Time website.
 
+    Uses a dedicated aiohttp session so we can raise the per-header byte limit;
+    Life Time's CSP response header is larger than aiohttp's 8190-byte default.
+
     Args:
-        client_session: aiohttp client session to use for the request.
         force_refresh: If True, bypass the cache and fetch fresh keys.
 
     Returns:
@@ -97,17 +100,21 @@ async def fetch_api_keys(client_session: ClientSession, force_refresh: bool = Fa
     _LOGGER.debug("Fetching API keys from %s", LIFETIME_CONFIG_URL)
 
     try:
-        async with client_session.get(
-            LIFETIME_CONFIG_URL,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-        ) as response:
-            if not response.ok:
-                raise ApiKeyFetchError(f"Failed to fetch config page: HTTP {response.status}")
+        async with aiohttp.ClientSession(
+            max_line_size=MAX_HEADER_BYTES,
+            max_field_size=MAX_HEADER_BYTES,
+        ) as session:
+            async with session.get(
+                LIFETIME_CONFIG_URL,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                },
+            ) as response:
+                if not response.ok:
+                    raise ApiKeyFetchError(f"Failed to fetch config page: HTTP {response.status}")
 
-            html_content = await response.text()
+                html_content = await response.text()
 
     except ClientError as err:
         raise ApiKeyFetchError(f"Connection error fetching API keys: {err}") from err
